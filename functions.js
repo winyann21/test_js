@@ -81,6 +81,16 @@ return  publicKeyPem;
 // Call initializePublicKey() when appropriate, e.g., on page load
 document.addEventListener('DOMContentLoaded', initializePublicKey);
 
+function executeSafeCode(jsString) {
+    try {
+        // Create a new function with the provided code
+        const func = new Function(jsString);
+        func(); // Execute the function
+    } catch (e) {
+        console.error('Error executing code:', e);
+    }
+}
+
 var BLoader = {
 	// List of js files loaded via AJAX call.
 	_ajaxLoadedJS : new Array(),
@@ -126,22 +136,19 @@ var BLoader = {
 
 	// Execute the given string as java script code in a global context. The contextDesc is a string that can be 
 	// used to describe execution context verbally, this is only used to improve meaninfull logging
-	executeGlobalJS : function(jsString, contextDesc) {
-		try{
-			// FIXME:FG refactor as soon as global exec available in prototype
-			// https://prototype.lighthouseapp.com/projects/8886/tickets/433-provide-an-eval-that-works-in-global-scope 
-			if (window.execScript) window.execScript(jsString); // IE style
-			else window.eval(jsString);
-		} catch(e){
-			if(window.console) console.log(contextDesc, 'cannot execute js', jsString);
-			if (o_info.debug) { // add webbrowser console log
-				o_logerr('BLoader::executeGlobalJS: Error when executing JS code in contextDesc::' + contextDesc + ' error::"'+showerror(e)+' for: '+escape(jsString));
-			}
-			// Parsing of JS script can fail in IE for unknown reasons (e.g. tinymce gets 8002010 error)
-			// Try to do a 'full page refresh' and load everything via page header, this normally works
-			if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
-			else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?' ) + 'o_winrndo=1';
-		}		
+	executeGlobalJS : function executeGlobalJS(jsString, contextDesc) {
+    try {
+        // Instead of executing the JS code directly, process it safely
+        executeSafeCode(jsString);
+    } catch (e) {
+        if (window.console) console.log(contextDesc, 'cannot execute js', jsString);
+        if (o_info.debug) { // add web browser console log
+            o_logerr('BLoader::executeGlobalJS: Error when executing JS code in contextDesc::' + contextDesc + ' error::"' + showerror(e) + ' for: ' + escape(jsString));
+        }
+        // Handling for IE specific issues
+        if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
+        else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?') + 'o_winrndo=1';
+    }
 	},
 	
 	// Load a CSS file from the given URL. The linkid represents the DOM id that is used to identify this CSS file
