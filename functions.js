@@ -859,22 +859,52 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-	// Create a link and set the URL using `createObjectURL`
-	var link = document.createElement("a");
-	link.style.display = "none";
-	link.href = new URL(url);
-	link.download = filename;
+    // Validation function for filenames
+    function isValidFilename(name) {
+        // Basic validation for filenames, allowing alphanumeric, dots, and underscores
+        var filenamePattern = /^[a-zA-Z0-9._-]+$/;
+        return filenamePattern.test(name);
+    }
 
-	// It needs to be added to the DOM so it can be clicked
-	document.body.appendChild(link);
-	link.click();
+    // Validation function for URLs
+    function isValidUrl(url) {
+        try {
+            var parsedUrl = new URL(url);
+            return ['http:', 'https:'].includes(parsedUrl.protocol); // Allow only HTTP and HTTPS
+        } catch (e) {
+            return false;
+        }
+    }
 
-	// To make this work on Firefox we need to wait
-	// a little while before removing it.
-	setTimeout(function () {
-		link.parentNode.removeChild(link);
-	}, 1000);
+    // Validate filename
+    if (!isValidFilename(filename)) {
+        console.error('Invalid filename');
+        return;
+    }
+
+    // Validate URL
+    if (!isValidUrl(url)) {
+        console.error('Invalid URL');
+        return;
+    }
+
+    // Create a link and set the URL using `createObjectURL`
+    var link = document.createElement("a");
+    link.style.display = "none";
+    link.href = new URL(url); // Safe because URL is validated
+    link.download = filename; // Safe because filename is validated
+
+    // It needs to be added to the DOM so it can be clicked
+    document.body.appendChild(link);
+    link.click();
+
+    // To make this work on Firefox we need to wait
+    // a little while before removing it.
+    setTimeout(function () {
+        link.parentNode.removeChild(link);
+    }, 1000);
 }
+
 
 
 //Pop-up window for context-sensitive help
@@ -1687,20 +1717,31 @@ function o_XHRLoadend() {
 
 
 function o_onXHRSuccess (data, textStatus, jqXHR) {
-	try {	
-		o_ainvoke(data);
-		var businessPath = data['businessPath'];
-		var documentTitle = data['documentTitle'];
-		var historyPointId = data['historyPointId'];
-		if(businessPath) {
-			o_pushState(historyPointId, documentTitle, businessPath);
-		}
-	} catch(e) {
-		if(window.console) console.log(e);
-	} finally {
-		o_afterserver(data);
-	}
+     try {
+        // Validate the data object and invoke safely
+        if (data && typeof data === 'object') {
+            o_ainvoke(data);  // Assuming this function handles data securely
+
+            // Validate and sanitize businessPath
+            var businessPath = data['businessPath'];
+            var documentTitle = data['documentTitle'];
+            var historyPointId = data['historyPointId'];
+
+            if (businessPath && isValidBusinessPath(businessPath)) {
+                // Sanitize documentTitle before passing it to o_pushState
+                documentTitle = sanitizeText(documentTitle);
+
+                // Use the sanitized/validated values safely
+                o_pushState(historyPointId, documentTitle, businessPath);
+            }
+        }
+    } catch (e) {
+        if (window.console) console.log(e);
+    } finally {
+        o_afterserver(data);  // Assuming this function processes data securely
+    }
 }
+
 
 function o_createIFrame(iframeName) {
 	var $iframe = jQuery('<iframe name="'+iframeName+'" id="'+iframeName+'" src="about:blank" style="position: absolute; top: -9999px; left: -9999px;"></iframe>');
@@ -1729,13 +1770,26 @@ function o_showFormDirtyDialog(onIgnoreCallback) {
 	return false;
 }
 
+// Helper function to validate businessPath (allowing only alphanumeric, slashes, dashes, and underscores)
+function isValidBusinessPath(path) {
+    var pathPattern = /^[a-zA-Z0-9\-\/_]+$/;
+    return pathPattern.test(path);
+}
+
+// Helper function to sanitize document title and other text inputs
+function sanitizeText(input) {
+    var div = document.createElement('div');
+    div.innerText = input;  // This escapes potentially dangerous characters
+    return div.innerHTML;
+}
+
 function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirtyCheck, push, submit, busyCheck) {
 	if(dirtyCheck && isFlexiFormDirty()) {
 		// Copy function arguments and set the dirtyCheck to false for execution in callback.
 		// Note that the argument list is dynamic, there are potentially more arguments than
 		// listed in the function (e.g. in QTI2)
 		var callbackArguments = Array.prototype.slice.call(arguments);
-		callbackArguments[5] = false; 		
+		callbackArguments[5] = false;
 		var onIgnoreCallback = function() {
 			// fire original event when the "ok, delete anyway" button was pressed
 			o_ffXHREvent.apply(window, callbackArguments);
@@ -1743,14 +1797,14 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		return o_showFormDirtyDialog(onIgnoreCallback);
 	} else if(busyCheck && !o2cl_noDirtyCheck()) {
 		// Start event execution, start server to prevent concurrent executions of other events.
-		// This check will call o_beforeserver(). 
+		// This check will call o_beforeserver().
 		// o_afterserver() called when AJAX call terminates
 		return false;
-	}	
+	}
 	// Don't call o_beforeserver() here because already called in o2cl_noDirtyCheck()
 	// The window.suppressOlatOnUnloadOnce works only once (needed in SCORM).
 	// o_beforeserver();
-	
+
 	var data = new Object();
 	if(submit) {
 		var form = jQuery('#' + formNam);
@@ -1765,7 +1819,7 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 	} else {
 		data['_csrf'] = jQuery('#' + formNam + " input[name='_csrf']").val();
 	}
-	
+
 	var openInNewWindow = false;
 	var openInNewWindowTarget = "_blank";
 	data['dispatchuri'] = dispId;
@@ -1783,13 +1837,13 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 			}
 		}
 	}
-	
+
 	var newTargetWindow = null;
 	if(openInNewWindow) {
 		newTargetWindow = window.open("",openInNewWindowTarget);
 		newTargetWindow.blur();
 	}
-	
+
 	var targetUrl = jQuery('#' + formNam).attr("action");
 	jQuery.ajax(targetUrl,{
 		type:'POST',
@@ -1798,22 +1852,36 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		dataType: 'json',
 		success: function(responseData, textStatus, jqXHR) {
 			try {
-				o_ainvoke(responseData);
-				if(push) {
-					var businessPath = responseData['businessPath'];
-					var documentTitle = responseData['documentTitle'];
-					var historyPointId = responseData['historyPointId'];
-					if(businessPath) {
-						o_pushState(historyPointId, documentTitle, businessPath);
-					}
-				}
-				
-				o_postInvoke(responseData, newTargetWindow);
-			} catch(e) {
-				if(window.console) console.log(e);
-			} finally {
-				o_afterserver(responseData);
-			}
+                // Validate that responseData is an object
+                if (responseData && typeof responseData === 'object') {
+
+                    // Validate and sanitize the response data
+                    o_ainvoke(responseData); // Assuming this function processes the data safely
+
+                    if (push) {
+                        var businessPath = responseData['businessPath'];
+                        var documentTitle = responseData['documentTitle'];
+                        var historyPointId = responseData['historyPointId'];
+
+                        // Validate and sanitize businessPath
+                        if (businessPath && isValidBusinessPath(businessPath)) {
+
+                            // Sanitize the documentTitle to prevent XSS
+                            documentTitle = sanitizeText(documentTitle);
+
+                            // Call pushState safely
+                            o_pushState(historyPointId, documentTitle, businessPath);
+                        }
+                    }
+
+                    // Call the post-invoke function, assuming it handles responseData securely
+                    o_postInvoke(responseData, newTargetWindow);
+                }
+            } catch (e) {
+                if (window.console) console.log(e);
+            } finally {
+                o_afterserver(responseData); // Assuming this function is safe
+            }
 		},
 		error: o_onXHRError
 	})
@@ -2159,14 +2227,29 @@ function setFlexiFormDirtyByListener(e){
 	}
 }
 
-function setFlexiFormDirty(formId, hideMessage){
-	jQuery('#'+formId).each(function() {
-		var submitId = jQuery(this).data('FlexiSubmit');
-		if(submitId != null) {
-			jQuery('#'+submitId).addClass('btn o_button_dirty');
-			o2c = (hideMessage ? 0 : 1);
-		}
-	});
+function isValidId(id) {
+    var idPattern = /^[a-zA-Z0-9-_]+$/;
+    return idPattern.test(id);
+}
+
+function setFlexiFormDirty(formId, hideMessage) {
+    // Use validation function to check if formId is valid
+    if (!isValidId(formId)) {
+        console.error('Invalid formId');
+        return;
+    }
+
+    jQuery('#' + formId).each(function () {
+        var submitId = jQuery(this).data('FlexiSubmit');
+
+        // Use validation function to check if submitId is valid
+        if (submitId && isValidId(submitId)) {
+            jQuery('#' + submitId).addClass('btn o_button_dirty');
+            o2c = (hideMessage ? 0 : 1);
+        } else {
+            console.error('Invalid submitId');
+        }
+    });
 }
 
 function isFlexiFormDirty() {
@@ -2929,28 +3012,17 @@ var OOEdusharing = {
 		
 		jQuery.ajax({
 			type: "GET",
-            url: url,
-            dataType: 'html',
-            success: function(data) {
-                // Sanitize HTML content to prevent XSS
-                var sanitizedData = sanitizeHTML(data);
-
-                // Process the sanitized data
-                var goToData = OOEdusharing.replaceGoTo(sanitizedData, identifier);
-
-                // Ensure container and node are valid jQuery objects
-                var esNode = container.append(goToData);
-
-                // Replace the old node with the new content
-                node.replaceWith(esNode);
-
-                // Adjust content height for absolute elements
-                OPOL.adjustContentHeightForAbsoluteElement('.o_edusharing_container .edusharing_metadata_wrapper');
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                // Handle error by replacing node with an error message
-                node.replaceWith("<div class='o_warning'>edu-sharing not available</div>");
-            }
+			url: url,
+			dataType : 'html',
+			success : function(data){
+				var goToData = OOEdusharing.replaceGoTo(data, identifier);
+				var esNode = container.append(goToData);
+				node.replaceWith(esNode);
+				OPOL.adjustContentHeightForAbsoluteElement('.o_edusharing_container .edusharing_metadata_wrapper');
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+				node.replaceWith("<div class='o_warning'>edu-sharing not available</div>");
+			}
 		})
 	},
 		
