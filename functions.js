@@ -126,44 +126,22 @@ var BLoader = {
 
 	// Execute the given string as java script code in a global context. The contextDesc is a string that can be 
 	// used to describe execution context verbally, this is only used to improve meaninfull logging
-	executeGlobalJS: function(jsString, contextDesc) {
-    function sanitizeInput(input) {
-        // More comprehensive sanitization example
-        // Remove potentially harmful constructs
-        return input
-            .replace(/<\/?script[^>]*>/gi, '') // Remove script tags
-            .replace(/javascript:/gi, '') // Remove javascript: URL schemes
-            .replace(/eval\(/gi, '') // Remove eval
-            .replace(/new\s+Function\s*\(/gi, '') // Remove new Function
-            .replace(/window\.location\s*=/gi, '') // Remove assignments to window.location
-            .trim();
-    }
-
-    function logError(message) {
-        if (window.console) console.log(message);
-        if (o_info.debug) {
-            o_logerr(message);
-        }
-    }
-
-    try {
-        const sanitizedCode = sanitizeInput(jsString);
-
-        // Use Function constructor with additional context if necessary
-        const func = new Function(sanitizedCode);
-        func(); // Execute the sanitized code
-
-    } catch (e) {
-        logError(`${contextDesc} cannot execute JS: ${jsString}`);
-        logError(`BLoader::executeGlobalJS: Error when executing JS code in contextDesc::${contextDesc} error::"${showerror(e)}" for: ${escape(jsString)}`);
-
-        // Handling reload if parsing fails
-        if (window.location.href.indexOf('o_winrndo') !== -1) {
-            window.location.reload();
-        } else {
-            window.location.href = window.location.href + (window.location.href.indexOf('?') !== -1 ? '&' : '?') + 'o_winrndo=1';
-        }
-    }
+	executeGlobalJS : function(jsString, contextDesc) {
+		try{
+			// FIXME:FG refactor as soon as global exec available in prototype
+			// https://prototype.lighthouseapp.com/projects/8886/tickets/433-provide-an-eval-that-works-in-global-scope 
+			if (window.execScript) window.execScript(jsString); // IE style
+			else window.eval(jsString);
+		} catch(e){
+			if(window.console) console.log(contextDesc, 'cannot execute js', jsString);
+			if (o_info.debug) { // add webbrowser console log
+				o_logerr('BLoader::executeGlobalJS: Error when executing JS code in contextDesc::' + contextDesc + ' error::"'+showerror(e)+' for: '+escape(jsString));
+			}
+			// Parsing of JS script can fail in IE for unknown reasons (e.g. tinymce gets 8002010 error)
+			// Try to do a 'full page refresh' and load everything via page header, this normally works
+			if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
+			else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?' ) + 'o_winrndo=1';
+		}		
 	},
 
 
