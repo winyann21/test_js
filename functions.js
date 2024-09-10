@@ -81,16 +81,6 @@ return  publicKeyPem;
 // Call initializePublicKey() when appropriate, e.g., on page load
 document.addEventListener('DOMContentLoaded', initializePublicKey);
 
-function executeSafeCode(jsString) {
-    try {
-        // Create a new function with the provided code
-        const func = new Function(jsString);
-        func(); // Execute the function
-    } catch (e) {
-        console.error('Error executing code:', e);
-    }
-}
-
 var BLoader = {
 	// List of js files loaded via AJAX call.
 	_ajaxLoadedJS : new Array(),
@@ -136,20 +126,42 @@ var BLoader = {
 
 	// Execute the given string as java script code in a global context. The contextDesc is a string that can be 
 	// used to describe execution context verbally, this is only used to improve meaninfull logging
-	executeGlobalJS : function executeGlobalJS(jsString, contextDesc) {
-    try {
-        // Instead of executing the JS code directly, process it safely
-        executeSafeCode(jsString);
-    } catch (e) {
-        if (window.console) console.log(contextDesc, 'cannot execute js', jsString);
-        if (o_info.debug) { // add web browser console log
-            o_logerr('BLoader::executeGlobalJS: Error when executing JS code in contextDesc::' + contextDesc + ' error::"' + showerror(e) + ' for: ' + escape(jsString));
+	executeGlobalJS: function(jsString, contextDesc) {
+    function sanitizeInput(input) {
+        // Basic sanitization to remove script tags and dangerous content
+        return input
+            .replace(/<\/?script[^>]*>/gi, '') // Remove script tags
+            .replace(/javascript:/gi, '') // Remove javascript: URL schemes
+            .trim();
+    }
+
+    function logError(message) {
+        if (window.console) console.log(message);
+        if (o_info.debug) {
+            o_logerr(message);
         }
-        // Handling for IE specific issues
-        if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
-        else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?') + 'o_winrndo=1';
+    }
+
+    try {
+        const sanitizedCode = sanitizeInput(jsString);
+
+        // Use the Function constructor for safer code execution
+        const func = new Function(sanitizedCode);
+        func(); // Execute the sanitized code
+
+    } catch (e) {
+        logError(`${contextDesc} cannot execute JS: ${jsString}`);
+        logError(`BLoader::executeGlobalJS: Error when executing JS code in contextDesc::${contextDesc} error::"${showerror(e)}" for: ${escape(jsString)}`);
+
+        // Handling reload if parsing fails
+        if (window.location.href.indexOf('o_winrndo') !== -1) {
+            window.location.reload();
+        } else {
+            window.location.href = window.location.href + (window.location.href.indexOf('?') !== -1 ? '&' : '?') + 'o_winrndo=1';
+        }
     }
 	},
+
 	
 	// Load a CSS file from the given URL. The linkid represents the DOM id that is used to identify this CSS file
 	loadCSS : function (cssURL, linkid, loadAfterTheme) {
