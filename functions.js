@@ -1689,19 +1689,29 @@ function o_XHRLoadend() {
 
 
 function o_onXHRSuccess (data, textStatus, jqXHR) {
-	try {	
-		o_ainvoke(data);
-		var businessPath = data['businessPath'];
-		var documentTitle = data['documentTitle'];
-		var historyPointId = data['historyPointId'];
-		if(businessPath) {
-			o_pushState(historyPointId, documentTitle, businessPath);
-		}
-	} catch(e) {
-		if(window.console) console.log(e);
-	} finally {
-		o_afterserver(data);
-	}
+	 try {
+        // Validate the data object and invoke safely
+        if (data && typeof data === 'object') {
+            o_ainvoke(data);  // Assuming this function handles data securely
+
+            // Validate and sanitize businessPath
+            var businessPath = data['businessPath'];
+            var documentTitle = data['documentTitle'];
+            var historyPointId = data['historyPointId'];
+
+            if (businessPath && isValidBusinessPath(businessPath)) {
+                // Sanitize documentTitle before passing it to o_pushState
+                documentTitle = sanitizeText(documentTitle);
+
+                // Use the sanitized/validated values safely
+                o_pushState(historyPointId, documentTitle, businessPath);
+            }
+        }
+    } catch (e) {
+        if (window.console) console.log(e);
+    } finally {
+        o_afterserver(data);  // Assuming this function processes data securely
+    }
 }
 
 function o_createIFrame(iframeName) {
