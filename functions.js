@@ -1534,6 +1534,11 @@ function o_deleteExtraMultipartFormData(name) {
 	}
 }
 
+// Function to sanitize text
+function sanitizeTextInput(text) {
+    return text ? text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') : '';
+}
+
 function o_XHRSubmit(formNam) {
 	if(o_info.submit == "submit" && jQuery('#' + formNam + " button.btn.o_new_window").length >= 1) {
 		if(typeof o_info.newWindow === "undefined" || o_info.newWindow == null) {
@@ -1582,31 +1587,43 @@ function o_XHRSubmit(formNam) {
 			}
 
 			var targetUrl = form.attr("action");
-			jQuery.ajax(targetUrl,{
-				xhr: function() {
-					var xhr = new window.XMLHttpRequest();						
-					xhr.upload.addEventListener("loadstart", o_XHRLoadstart, false);
-					xhr.upload.addEventListener("progress", o_XHRProgress, false);
-					xhr.upload.addEventListener("loadend", o_XHRLoadend, false);
-					return xhr;
-			    },
-				type:'POST',
-				data: formData,
-				cache: false,
-				contentType: false,
-				enctype: 'multipart/form-data',
-			    processData: false,
-				dataType: 'json',
-				success: function(returnedData, textStatus, jqXHR) {
-					o_onXHRSuccess(returnedData, textStatus, jqXHR);
-					if(newWindow !== "undefined" && newWindow != null) {
-						o_postInvoke(returnedData, newWindow);
-					} else {
-						o_postInvoke(returnedData, thisWindow);
-					}
-				},
-				error: o_onXHRError
-			});
+			jQuery.ajax(targetUrl, {
+                xhr: function() {
+                    var xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("loadstart", o_XHRLoadstart, false);
+                    xhr.upload.addEventListener("progress", o_XHRProgress, false);
+                    xhr.upload.addEventListener("loadend", o_XHRLoadend, false);
+                    return xhr;
+                },
+                type: 'POST',
+                data: formData,
+                cache: false,
+                contentType: false,
+                enctype: 'multipart/form-data',
+                processData: false,
+                dataType: 'json',
+                success: function(returnedData, textStatus, jqXHR) {
+                    // Sanitize any content from returnedData before using it
+                    if (returnedData) {
+                        // Example sanitization, adjust according to your needs
+                        var sanitizedData = {
+                            businessPath: sanitizeText(returnedData.businessPath),
+                            documentTitle: sanitizeText(returnedData.documentTitle),
+                            historyPointId: sanitizeText(returnedData.historyPointId)
+                        };
+
+                        // Use sanitized data
+                        o_onXHRSuccess(sanitizedData, textStatus, jqXHR);
+
+                        if (typeof newWindow !== "undefined" && newWindow != null) {
+                            o_postInvoke(sanitizedData, newWindow);
+                        } else {
+                            o_postInvoke(sanitizedData, thisWindow);
+                        }
+                    }
+                },
+                error: o_onXHRError
+            });
 			return false;
 		} else {
 			// iframe fallback for very old browsers without upload progress. Subject to be removed in future OO releses
