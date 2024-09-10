@@ -526,52 +526,33 @@ if(!Array.prototype.indexOf) {
         return -1;
 	}
 }
-function isValidUrl(url) {
-    try {
-        // Parse the URL
-        const parsedUrl = new URL(url);
-        
-        // Only allow http and https protocols
-        if (!parsedUrl.protocol.startsWith('http') && !parsedUrl.protocol.startsWith('https')) {
-            return false;
-        }
-
-        // Additional checks can be added here (e.g., checking against a whitelist)
-        return true;
-    } catch (e) {
-        // URL parsing failed
-        return false;
-    }
-}
 
 function o_postInvoke(r, newWindow) {
-    var cmdcnt = r["cmdcnt"];
-    if (cmdcnt > 0) {
-        var cs = r["cmds"];
-        for (var i = 0; i < cmdcnt; i++) {
-            var acmd = cs[i];
-            var co = acmd["cmd"];
-            if (co == 8) {
-                var url = acmd["cda"].nwrurl;
-                if (url == "close-window") {
-                    if (newWindow == null) {
-                        try {
-                            window.close(); // Try to close the window
-                        } catch (e) {
-                            // Handle errors if any
-                        }
-                    } else {
-                        newWindow.close();
-                    }
-                } else if (newWindow != null && isValidUrl(url)) {
-                    newWindow.location.href = url;
-                    newWindow.focus();
-                } else {
-                    console.warn('Invalid URL:', url);
-                }
-            }
-        }
-    }
+	var cmdcnt = r["cmdcnt"];
+	if (cmdcnt > 0) {
+		var cs = r["cmds"];
+		for (var i=0; i<cmdcnt; i++) {
+			var acmd = cs[i];
+			var co = acmd["cmd"];
+			if(co == 8) {
+				var url = acmd["cda"].nwrurl;
+				if(url == "close-window") {
+					if(newWindow == null) {
+						try {
+							window.close();// try without much hope
+						} catch(e) {
+							//
+						}
+					} else {
+						newWindow.close();
+					}
+				} else if(newWindow != null) {
+					newWindow.location.href = url;
+					newWindow.focus();
+				}
+			}
+		}
+	}
 }
 
 // Function to sanitize the filename by removing unsafe characters
@@ -1866,36 +1847,22 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		dataType: 'json',
 		success: function(responseData, textStatus, jqXHR) {
 			try {
-                // Validate that responseData is an object
-                if (responseData && typeof responseData === 'object') {
-
-                    // Validate and sanitize the response data
-                    o_ainvoke(responseData); // Assuming this function processes the data safely
-
-                    if (push) {
-                        var businessPath = responseData['businessPath'];
-                        var documentTitle = responseData['documentTitle'];
-                        var historyPointId = responseData['historyPointId'];
-
-                        // Validate and sanitize businessPath
-                        if (businessPath && isValidBusinessPath(businessPath)) {
-
-                            // Sanitize the documentTitle to prevent XSS
-                            documentTitle = sanitizeText(documentTitle);
-
-                            // Call pushState safely
-                            o_pushState(historyPointId, documentTitle, businessPath);
-                        }
-                    }
-
-                    // Call the post-invoke function, assuming it handles responseData securely
-                    o_postInvoke(responseData, newTargetWindow);
-                }
-            } catch (e) {
-                if (window.console) console.log(e);
-            } finally {
-                o_afterserver(responseData); // Assuming this function is safe
-            }
+				o_ainvoke(responseData);
+				if(push) {
+					var businessPath = responseData['businessPath'];
+					var documentTitle = responseData['documentTitle'];
+					var historyPointId = responseData['historyPointId'];
+					if(businessPath) {
+						o_pushState(historyPointId, documentTitle, businessPath);
+					}
+				}
+				
+				o_postInvoke(responseData, newTargetWindow);
+			} catch(e) {
+				if(window.console) console.log(e);
+			} finally {
+				o_afterserver(responseData);
+			}
 		},
 		error: o_onXHRError
 	})
