@@ -2422,38 +2422,56 @@ function dismissInfoBox(uuid) {
 * and hides automatically
 */
 function showInfoBox(title, content) {
+	// Sanitize title and content
+	const sanitizedTitle = o_escapeHtml(title);
+	const sanitizedContent = o_escapeHtml(content);
+
 	// Factory method to create message box
 	var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
-	var info = '<div id="' + uuid
-	     + '" class="o_alert_info"><div class="alert alert-info clearfix o_sel_info_message"><a class="o_alert_close o_sel_info_close" href="javascript:;" onclick="dismissInfoBox(\'' + uuid + '\')"><i class="o_icon o_icon_close"> </i></a><h3><i class="o_icon o_icon_info"> </i> '
-		 + title + '</h3><p>' + content + '</p></div></div>';
-    jQuery('#o_messages').prepend(info);
-    // Hide message automatically based on content length
-    var time = (content.length > 150) ? 10000 : ((content.length > 70) ? 8000 : 6000);
+	var info = `
+			<div id="${uuid}" class="o_alert_info">
+					<div class="alert alert-info clearfix o_sel_info_message">
+							<a class="o_alert_close o_sel_info_close" href="javascript:;" onclick="dismissInfoBox('${uuid}')">
+									<i class="o_icon o_icon_close"> </i>
+							</a>
+							<h3><i class="o_icon o_icon_info"> </i> ${sanitizedTitle}</h3>
+							<p>${sanitizedContent}</p>
+					</div>
+			</div>
+	`;
 
-    // Callback to remove after reading
-    var cleanup = function() {
-    	jQuery('#' + uuid)
-    		.transition({top : '-100%'}, 333, function() {
-    			jQuery('#' + uuid).remove();
-    		});    	
-    };
-    // Show info box now
-    jQuery('#' + uuid).show().transition({ top: 0 }, 333);
-    // Visually remove message box immediately when user clicks on it
-    jQuery('#' + uuid).click(function(e) {
-    	cleanup();
-    });
-	o_scrollToElement('#o_top');
-    
-    setTimeout(function(){
-		try {
+	jQuery('#o_messages').prepend(info);
+
+	// Hide message automatically based on content length
+	var time = (sanitizedContent.length > 150) ? 10000 : ((sanitizedContent.length > 70) ? 8000 : 6000);
+
+	// Callback to remove after reading
+	var cleanup = function() {
+			jQuery('#' + uuid)
+					.transition({top : '-100%'}, 333, function() {
+							jQuery('#' + uuid).remove();
+					});
+	};
+
+	// Show info box now
+	jQuery('#' + uuid).show().transition({ top: 0 }, 333);
+
+	// Visually remove message box immediately when user clicks on it
+	jQuery('#' + uuid).click(function(e) {
 			cleanup();
-		} catch(e) {
-			//possible if the user has closed the window
-		}
+	});
+
+	o_scrollToElement('#o_top');
+
+	setTimeout(function(){
+			try {
+					cleanup();
+			} catch(e) {
+					// Possible if the user has closed the window
+			}
 	}, time);
 }
+
 /*
 * renders an message box which the user has to click away
 * The last parameter buttonCallback is optional. if a callback js 
