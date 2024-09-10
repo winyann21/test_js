@@ -139,20 +139,8 @@ var BLoader = {
 			}
 			// Parsing of JS script can fail in IE for unknown reasons (e.g. tinymce gets 8002010 error)
 			// Try to do a 'full page refresh' and load everything via page header, this normally works
-			// Safe URL handling
-			try {
-					// Handle URL safely
-					const url = new URL(window.location.href);
-					if (!url.searchParams.has('o_winrndo')) {
-							url.searchParams.append('o_winrndo', '1');
-							window.location.href = url.toString();
-					} else {
-							window.location.reload();
-					}
-			} catch (urlError) {
-					console.error('Error handling URL:', urlError);
-					// Handle URL error appropriately (e.g., fallback URL or user notification)
-			}
+			if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
+			else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?' ) + 'o_winrndo=1';
 		}		
 	},
 
@@ -538,33 +526,52 @@ if(!Array.prototype.indexOf) {
         return -1;
 	}
 }
+function isValidUrl(url) {
+    try {
+        // Parse the URL
+        const parsedUrl = new URL(url);
+        
+        // Only allow http and https protocols
+        if (!parsedUrl.protocol.startsWith('http') && !parsedUrl.protocol.startsWith('https')) {
+            return false;
+        }
+
+        // Additional checks can be added here (e.g., checking against a whitelist)
+        return true;
+    } catch (e) {
+        // URL parsing failed
+        return false;
+    }
+}
 
 function o_postInvoke(r, newWindow) {
-	var cmdcnt = r["cmdcnt"];
-	if (cmdcnt > 0) {
-		var cs = r["cmds"];
-		for (var i=0; i<cmdcnt; i++) {
-			var acmd = cs[i];
-			var co = acmd["cmd"];
-			if(co == 8) {
-				var url = acmd["cda"].nwrurl;
-				if(url == "close-window") {
-					if(newWindow == null) {
-						try {
-							window.close();// try without much hope
-						} catch(e) {
-							//
-						}
-					} else {
-						newWindow.close();
-					}
-				} else if(newWindow != null) {
-					newWindow.location.href = url;
-					newWindow.focus();
-				}
-			}
-		}
-	}
+    var cmdcnt = r["cmdcnt"];
+    if (cmdcnt > 0) {
+        var cs = r["cmds"];
+        for (var i = 0; i < cmdcnt; i++) {
+            var acmd = cs[i];
+            var co = acmd["cmd"];
+            if (co == 8) {
+                var url = acmd["cda"].nwrurl;
+                if (url == "close-window") {
+                    if (newWindow == null) {
+                        try {
+                            window.close(); // Try to close the window
+                        } catch (e) {
+                            // Handle errors if any
+                        }
+                    } else {
+                        newWindow.close();
+                    }
+                } else if (newWindow != null && isValidUrl(url)) {
+                    newWindow.location.href = url;
+                    newWindow.focus();
+                } else {
+                    console.warn('Invalid URL:', url);
+                }
+            }
+        }
+    }
 }
 
 // Function to sanitize the filename by removing unsafe characters
