@@ -1847,21 +1847,35 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		dataType: 'json',
 		success: function(responseData, textStatus, jqXHR) {
 			try {
-				o_ainvoke(responseData);
-				if(push) {
-					var businessPath = responseData['businessPath'];
-					var documentTitle = responseData['documentTitle'];
-					var historyPointId = responseData['historyPointId'];
-					if(businessPath) {
-						o_pushState(historyPointId, documentTitle, businessPath);
+					// Validate that responseData is an object
+					if (responseData && typeof responseData === 'object') {
+
+							// Validate and sanitize the response data
+							o_ainvoke(responseData); // Assuming this function processes the data safely
+
+							if (push) {
+									var businessPath = responseData['businessPath'];
+									var documentTitle = responseData['documentTitle'];
+									var historyPointId = responseData['historyPointId'];
+
+									// Validate and sanitize businessPath
+									if (businessPath && isValidBusinessPath(businessPath)) {
+
+											// Sanitize the documentTitle to prevent XSS
+											documentTitle = sanitizeText(documentTitle);
+
+											// Call pushState safely
+											o_pushState(historyPointId, documentTitle, businessPath);
+									}
+							}
+
+							// Call the post-invoke function, assuming it handles responseData securely
+							o_postInvoke(responseData, newTargetWindow);
 					}
-				}
-				
-				o_postInvoke(responseData, newTargetWindow);
-			} catch(e) {
-				if(window.console) console.log(e);
+			} catch (e) {
+					if (window.console) console.log(e);
 			} finally {
-				o_afterserver(responseData);
+					o_afterserver(responseData); // Assuming this function is safe
 			}
 		},
 		error: o_onXHRError
