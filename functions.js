@@ -3034,17 +3034,22 @@ var OOEdusharing = {
 		jQuery.ajax({
 			type: "GET",
 			url: url,
-			dataType : 'html',
-			success : function(data){
-				var goToData = OOEdusharing.replaceGoTo(data, identifier);
-				var esNode = container.append(goToData);
-				node.replaceWith(esNode);
-				OPOL.adjustContentHeightForAbsoluteElement('.o_edusharing_container .edusharing_metadata_wrapper');
+			dataType: 'html',
+			success: function(data) {
+					// Escape HTML content as a basic fallback
+					var escapedData = o_escapeHtml(data);
+
+					// Process and insert escaped data into the DOM
+					var goToData = OOEdusharing.replaceGoTo(escapedData, identifier);
+					var esNode = container.append(goToData);
+					node.replaceWith(esNode);
+					OPOL.adjustContentHeightForAbsoluteElement('.o_edusharing_container .edusharing_metadata_wrapper');
 			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-				node.replaceWith("<div class='o_warning'>edu-sharing not available</div>");
+			error: function(XMLHttpRequest, textStatus, errorThrown) {
+					node.replaceWith("<div class='o_warning'>edu-sharing not available</div>");
 			}
-		})
+		});
+
 	},
 		
 	replace: function(node, isIFrame) {
