@@ -700,10 +700,10 @@ function o_ainvoke(r) {
 									newc.sanitizeText(hdrco);
 								} else {
 									try{
-										newc.empty().html(hdrco);
+										newc.empty().text(hdrco);
 										//check if the operation is a success especially for IE8
 										if(hdrco.length > 0 && newc.get(0).innerHTML == "") {
-											newc.get(0).innerHTML = hdrco;
+											newc.get(0).innerText = hdrco;
 										}
 									} catch(e) {
 										if(window.console) console.log(e);
