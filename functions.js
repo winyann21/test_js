@@ -697,12 +697,12 @@ function o_ainvoke(r) {
 								
 								if (replaceElement || !withWrapper) {
                                     // Replace entire DOM element with sanitized HTML
-                                    var sanitizedContent = o_escapeHtml(hdrco); // You need to implement escapeHTML function
+                                    var sanitizedContent = sanitizeText(hdrco); // You need to implement escapeHTML function
                                     newc.innerHTML = sanitizedContent;
                                 } else {
                                     try {
                                         newc.empty();
-                                        var sanitizedContent = o_escapeHtml(hdrco); // Implement escapeHTML function
+                                        var sanitizedContent = sanitizeText(hdrco); // Implement escapeHTML function
                                         newc.html(sanitizedContent);
 
                                         // Check for success, especially in older browsers
