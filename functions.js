@@ -77,7 +77,33 @@ return  publicKeyPem;
             console.error('Failed to initialize public key:', error.message);
         });
 }
+// Function to sanitize JS commands and ensure they are safe to execute
+function sanitizeJSCommands(jsString, allowedCommands) {
+    let sanitized = '';
+    allowedCommands.forEach(cmd => {
+        // Simple example: Only allow specific commands
+        if (jsString.includes(cmd)) {
+            sanitized += cmd + ';'; // Append allowed command to the sanitized string
+        }
+    });
+    return sanitized;
+}
 
+// Function to execute sanitized commands
+function executeSanitizedCommands(commands) {
+    if (commands) {
+        commands.split(';').forEach(cmd => {
+            if (cmd.trim()) {
+                // Execute sanitized command using predefined functions
+                if (cmd.startsWith('alert')) {
+                    eval(cmd); // Example: Use a safer eval only for allowed commands
+                } else if (cmd.startsWith('console.log')) {
+                    eval(cmd);
+                }
+            }
+        });
+    }
+}
 // Call initializePublicKey() when appropriate, e.g., on page load
 document.addEventListener('DOMContentLoaded', initializePublicKey);
 
@@ -126,23 +152,30 @@ var BLoader = {
 
 	// Execute the given string as java script code in a global context. The contextDesc is a string that can be 
 	// used to describe execution context verbally, this is only used to improve meaninfull logging
-	executeGlobalJS : function(jsString, contextDesc) {
-		try{
-			// FIXME:FG refactor as soon as global exec available in prototype
-			// https://prototype.lighthouseapp.com/projects/8886/tickets/433-provide-an-eval-that-works-in-global-scope 
-			if (window.execScript) window.execScript(jsString); // IE style
-			else window.eval(jsString);
-		} catch(e){
-			if(window.console) console.log(contextDesc, 'cannot execute js', jsString);
-			if (o_info.debug) { // add webbrowser console log
-				o_logerr('BLoader::executeGlobalJS: Error when executing JS code in contextDesc::' + contextDesc + ' error::"'+showerror(e)+' for: '+escape(jsString));
-			}
-			// Parsing of JS script can fail in IE for unknown reasons (e.g. tinymce gets 8002010 error)
-			// Try to do a 'full page refresh' and load everything via page header, this normally works
-			if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
-			else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?' ) + 'o_winrndo=1';
-		}		
-	},
+	executeGlobalJS: function(jsString, contextDesc) {
+        try {
+            // Validate jsString against a whitelist of allowed operations
+            const allowedCommands = ['alert', 'console.log']; // Define a whitelist of allowed commands
+            const sanitizedCommands = sanitizeJSCommands(jsString, allowedCommands);
+
+            // Log the context and sanitized JS commands for debugging
+            if (o_info.debug) {
+                o_log("BLoader::executeGlobalJS: Context: " + contextDesc + ", Sanitized Commands: " + sanitizedCommands);
+            }
+
+            // Execute sanitized commands using a predefined command map
+            executeSanitizedCommands(sanitizedCommands);
+
+        } catch (e) {
+            if (window.console) console.log(contextDesc, 'cannot execute js', jsString);
+            if (o_info.debug) {
+                o_logerr('BLoader::executeGlobalJS: Error when executing JS code in contextDesc::' + contextDesc + ' error::"' + showerror(e) + ' for: ' + escape(jsString));
+            }
+            // Handle errors and possibly refresh the page if needed
+            if (window.location.href.indexOf('o_winrndo') != -1) window.location.reload();
+            else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?') + 'o_winrndo=1';
+        }
+    },
 	
 	// Load a CSS file from the given URL. The linkid represents the DOM id that is used to identify this CSS file
     loadCSS: function (cssURL, linkid, loadAfterTheme) {
