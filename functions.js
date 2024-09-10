@@ -2466,32 +2466,41 @@ function showInfoBox(title, content) {
 * function is given it will be execute when the user clicks ok or closes the message box
 */
 function showMessageBox(type, title, message, buttonCallback) {
-	if(type == 'info'){
-		showInfoBox(title, message);
-		return null;
+	// Sanitize inputs using DOMPurify
+	const sanitizedTitle = DOMPurify.sanitize(title);
+	const sanitizedMessage = DOMPurify.sanitize(message);
+
+	if (type == 'info') {
+			showInfoBox(sanitizedTitle, sanitizedMessage);
+			return null;
 	} else {
-		var cssype = '';
-		if("warn" == type) {
-			cssype = 'alert-warning';
-		} else if("error" == type) {
-			cssype = 'alert-danger';
-		} else {
-			cssype = 'alert-info';
-		}
-		var content = '<div id="myFunctionalModal" class="modal o-modal-' + cssype + ' fade" tabindex="-1" role="dialog"><div class="modal-dialog"><div class="modal-content">';
-		content += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
-        content += '<h4 class="modal-title">' + title + '</h4></div>';	
-		content += '<div class="modal-body alert ' + cssype + '"><p>' + message + '</p></div></div></div></div>';
-		jQuery('#myFunctionalModal').remove();
-		jQuery('body').append(content);
-		               
-		var msg = jQuery('#myFunctionalModal').modal('show').on('hidden.bs.modal', function (e) {
+			let cssype = '';
+			if ("warn" == type) {
+					cssype = 'alert-warning';
+			} else if ("error" == type) {
+					cssype = 'alert-danger';
+			} else {
+					cssype = 'alert-info';
+			}
+
+			// Build sanitized content
+			let content = '<div id="myFunctionalModal" class="modal o-modal-' + cssype + ' fade" tabindex="-1" role="dialog">';
+			content += '<div class="modal-dialog"><div class="modal-content">';
+			content += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
+			content += '<h4 class="modal-title">' + sanitizedTitle + '</h4></div>';
+			content += '<div class="modal-body alert ' + cssype + '"><p>' + sanitizedMessage + '</p></div></div></div></div>';
+
 			jQuery('#myFunctionalModal').remove();
-		});
-		o_scrollToElement('#o_top');
-		return msg;
+			jQuery('body').append(content);
+
+			var msg = jQuery('#myFunctionalModal').modal('show').on('hidden.bs.modal', function (e) {
+					jQuery('#myFunctionalModal').remove();
+			});
+			o_scrollToElement('#o_top');
+			return msg;
 	}
 }
+
 
 function o_extraTinyDirty(editor) {
 	var dirty = editor.isDirty();
