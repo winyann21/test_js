@@ -859,18 +859,27 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-	// Step 1: Parse and validate the URL to avoid potential XSS
+	// Function to sanitize the filename by removing unsafe characters
+	function sanitizeFilename(name) {
+			// Replace unsafe characters with an empty string
+			return name.replace(/[^a-z0-9_\-\.]/gi, '_'); // Allow only alphanumeric, underscore, hyphen, and dot
+	}
+
+	// Step 1: Sanitize the filename
+	const safeFilename = sanitizeFilename(filename);
+
+	// Step 2: Validate and sanitize the URL to avoid potential XSS
 	let sanitizedUrl;
 	try {
-			// Parse the URL to ensure it's a valid URL
+			// Parse the URL to ensure it's valid
 			const parsedUrl = new URL(url);
 
-			// Step 2: Only allow http and https protocols to avoid malicious scripts
+			// Ensure only http and https protocols are allowed
 			if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
 					throw new Error('Invalid URL protocol. Only http and https are allowed.');
 			}
 
-			// Encode the URL to ensure proper formatting and avoid special character issues
+			// Encode the URL to avoid special character issues
 			sanitizedUrl = encodeURI(parsedUrl.href);
 
 	} catch (e) {
@@ -878,27 +887,28 @@ function o_downloadUrl(filename, url) {
 			return; // Exit the function if the URL is invalid or unsafe
 	}
 
-	// Step 3: Create a link element
+	// Step 3: Create the link element
 	var link = document.createElement("a");
-	link.style.display = "none"; // Hide the link element
+	link.style.display = "none"; // Hide the link
 
-	// Step 4: Set the sanitized URL for the href
+	// Set the sanitized URL and the sanitized filename
 	link.href = sanitizedUrl;
-	link.download = filename;    // Set the file name for download
+	link.download = safeFilename; // Use the sanitized filename
 
-	// Step 5: Safely append the link to the DOM and trigger the download
+	// Step 4: Append the link to the DOM, trigger download, and clean up
 	try {
-			document.body.appendChild(link); // Append to the body
+			document.body.appendChild(link); // Append the link to the body
 			link.click(); // Trigger the download
 
-			// Step 6: Clean up the DOM by removing the link after download
+			// Remove the link after download
 			setTimeout(function () {
-					link.parentNode.removeChild(link); // Remove the link after clicking
+					link.parentNode.removeChild(link); // Clean up
 			}, 1000);
 	} catch (appendError) {
 			console.error('Error appending link to the DOM:', appendError);
 	}
 }
+
 
 
 //Pop-up window for context-sensitive help
