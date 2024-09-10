@@ -2434,7 +2434,7 @@ function escapeHTML(html) {
 function showInfoBox(title, content) {
 	// Sanitize title and content
 	const sanitizedTitle = DOMPurify.sanitize(title);
-	const sanitizedContent = escapeHTML(content);
+	const sanitizedContent = DOMPurify.sanitize(content);
 
 	// Factory method to create message box
 	var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
