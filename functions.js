@@ -77,6 +77,7 @@ return  publicKeyPem;
             console.error('Failed to initialize public key:', error.message);
         });
 }
+
 // Function to sanitize JS commands and ensure they are safe to execute
 function sanitizeJSCommands(jsString, allowedCommands) {
     let sanitized = '';
@@ -110,7 +111,7 @@ document.addEventListener('DOMContentLoaded', initializePublicKey);
 var BLoader = {
 	// List of js files loaded via AJAX call.
 	_ajaxLoadedJS : new Array(),
-		
+
 	// Internal mehod to check if a JS file has already been loaded on the page
 	_isAlreadyLoadedJS: function(jsURL) {
 		var notLoaded = true;
@@ -124,12 +125,12 @@ var BLoader = {
 		if (jQuery.inArray(jsURL, this._ajaxLoadedJS) != -1) notLoaded = false;
 		return !notLoaded;
 	},
-		
-	// Load a JS file from an absolute or relative URL by using the given encoding. The last flag indicates if 
-	// the script should be loaded using an ajax call (recommended) or by adding a script tag to the document 
-	// head. Note that by using the script tag the JS script will be loaded asynchronous 
+
+	// Load a JS file from an absolute or relative URL by using the given encoding. The last flag indicates if
+	// the script should be loaded using an ajax call (recommended) or by adding a script tag to the document
+	// head. Note that by using the script tag the JS script will be loaded asynchronous
 	loadJS : function(jsURL, encoding, useSynchronousAjaxRequest) {
-		if (!this._isAlreadyLoadedJS(jsURL)) {		
+		if (!this._isAlreadyLoadedJS(jsURL)) {
 			if (o_info.debug) o_log("BLoader::loadJS: loading ajax::" + useSynchronousAjaxRequest + " url::" + jsURL);
 			if (useSynchronousAjaxRequest) {
 				jQuery.ajax(jsURL, {
@@ -142,15 +143,15 @@ var BLoader = {
 				});
 				this._ajaxLoadedJS.push(jsURL);
 			} else {
-				jQuery.getScript(jsURL);			
+				jQuery.getScript(jsURL);
 			}
 			if (o_info.debug) o_log("BLoader::loadJS: loading DONE url::" + jsURL);
 		} else {
-			if (o_info.debug) o_log("BLoader::loadJS: already loaded url::" + jsURL);			
+			if (o_info.debug) o_log("BLoader::loadJS: already loaded url::" + jsURL);
 		}
 	},
 
-	// Execute the given string as java script code in a global context. The contextDesc is a string that can be 
+	// Execute the given string as java script code in a global context. The contextDesc is a string that can be
 	// used to describe execution context verbally, this is only used to improve meaninfull logging
 	executeGlobalJS: function(jsString, contextDesc) {
         try {
@@ -176,7 +177,7 @@ var BLoader = {
             else window.location.href = window.location.href + (window.location.href.indexOf('?') != -1 ? '&' : '?') + 'o_winrndo=1';
         }
     },
-	
+
 	// Load a CSS file from the given URL. The linkid represents the DOM id that is used to identify this CSS file
     loadCSS: function (cssURL, linkid, loadAfterTheme) {
         var doc = window.document;
@@ -696,13 +697,13 @@ function o_ainvoke(r) {
 								
 								if(replaceElement || !withWrapper) {
 									// replace entire DOM element 
-									newc.textContent = hdrco;
+									newc.replaceWith(hdrco);	
 								} else {
 									try{
-										newc.empty().text(hdrco);
+										newc.empty().html(hdrco);
 										//check if the operation is a success especially for IE8
 										if(hdrco.length > 0 && newc.get(0).innerHTML == "") {
-											newc.get(0).innerText = hdrco;
+											newc.get(0).innerHTML = hdrco;
 										}
 									} catch(e) {
 										if(window.console) console.log(e);
@@ -892,28 +893,10 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-    // Validation function for URLs
-    let sanitizedUrl;
-    try {
-        // Parse the URL to ensure it's a valid URL
-        const parsedUrl = new URL(url);
-
-        // Step 2: Only allow http and https protocols to avoid malicious scripts
-        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-            throw new Error('Invalid URL protocol. Only http and https are allowed.');
-        }
-
-        // Encode the URL to ensure proper formatting and avoid special character issues
-        sanitizedUrl = encodeURI(parsedUrl.href);
-
-    } catch (e) {
-        console.error('Invalid or unsafe URL:', e.message);
-        return; // Exit the function if the URL is invalid or unsafe
-    }
 	// Create a link and set the URL using `createObjectURL`
 	var link = document.createElement("a");
 	link.style.display = "none";
-	link.href = sanitizedUrl;
+	link.href = new URL(url);
 	link.download = filename;
 
 	// It needs to be added to the DOM so it can be clicked
@@ -1738,31 +1721,20 @@ function o_XHRLoadend() {
 
 
 function o_onXHRSuccess (data, textStatus, jqXHR) {
-     try {
-        // Validate the data object and invoke safely
-        if (data && typeof data === 'object') {
-            o_ainvoke(data);  // Assuming this function handles data securely
-
-            // Validate and sanitize businessPath
-            var businessPath = data['businessPath'];
-            var documentTitle = data['documentTitle'];
-            var historyPointId = data['historyPointId'];
-
-            if (businessPath && isValidBusinessPath(businessPath)) {
-                // Sanitize documentTitle before passing it to o_pushState
-                documentTitle = sanitizeText(documentTitle);
-
-                // Use the sanitized/validated values safely
-                o_pushState(historyPointId, documentTitle, businessPath);
-            }
-        }
-    } catch (e) {
-        if (window.console) console.log(e);
-    } finally {
-        o_afterserver(data);  // Assuming this function processes data securely
-    }
+	try {	
+		o_ainvoke(data);
+		var businessPath = data['businessPath'];
+		var documentTitle = data['documentTitle'];
+		var historyPointId = data['historyPointId'];
+		if(businessPath) {
+			o_pushState(historyPointId, documentTitle, businessPath);
+		}
+	} catch(e) {
+		if(window.console) console.log(e);
+	} finally {
+		o_afterserver(data);
+	}
 }
-
 
 function o_createIFrame(iframeName) {
 	var $iframe = jQuery('<iframe name="'+iframeName+'" id="'+iframeName+'" src="about:blank" style="position: absolute; top: -9999px; left: -9999px;"></iframe>');
@@ -1791,26 +1763,13 @@ function o_showFormDirtyDialog(onIgnoreCallback) {
 	return false;
 }
 
-// Helper function to validate businessPath (allowing only alphanumeric, slashes, dashes, and underscores)
-function isValidBusinessPath(path) {
-    var pathPattern = /^[a-zA-Z0-9\-\/_]+$/;
-    return pathPattern.test(path);
-}
-
-// Helper function to sanitize document title and other text inputs
-function sanitizeText(input) {
-    var div = document.createElement('div');
-    div.innerText = input;  // This escapes potentially dangerous characters
-    return div.innerHTML;
-}
-
 function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirtyCheck, push, submit, busyCheck) {
 	if(dirtyCheck && isFlexiFormDirty()) {
 		// Copy function arguments and set the dirtyCheck to false for execution in callback.
 		// Note that the argument list is dynamic, there are potentially more arguments than
 		// listed in the function (e.g. in QTI2)
 		var callbackArguments = Array.prototype.slice.call(arguments);
-		callbackArguments[5] = false;
+		callbackArguments[5] = false; 		
 		var onIgnoreCallback = function() {
 			// fire original event when the "ok, delete anyway" button was pressed
 			o_ffXHREvent.apply(window, callbackArguments);
@@ -1818,14 +1777,14 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		return o_showFormDirtyDialog(onIgnoreCallback);
 	} else if(busyCheck && !o2cl_noDirtyCheck()) {
 		// Start event execution, start server to prevent concurrent executions of other events.
-		// This check will call o_beforeserver().
+		// This check will call o_beforeserver(). 
 		// o_afterserver() called when AJAX call terminates
 		return false;
-	}
+	}	
 	// Don't call o_beforeserver() here because already called in o2cl_noDirtyCheck()
 	// The window.suppressOlatOnUnloadOnce works only once (needed in SCORM).
 	// o_beforeserver();
-
+	
 	var data = new Object();
 	if(submit) {
 		var form = jQuery('#' + formNam);
@@ -1840,7 +1799,7 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 	} else {
 		data['_csrf'] = jQuery('#' + formNam + " input[name='_csrf']").val();
 	}
-
+	
 	var openInNewWindow = false;
 	var openInNewWindowTarget = "_blank";
 	data['dispatchuri'] = dispId;
@@ -1858,13 +1817,13 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 			}
 		}
 	}
-
+	
 	var newTargetWindow = null;
 	if(openInNewWindow) {
 		newTargetWindow = window.open("",openInNewWindowTarget);
 		newTargetWindow.blur();
 	}
-
+	
 	var targetUrl = jQuery('#' + formNam).attr("action");
 	jQuery.ajax(targetUrl,{
 		type:'POST',
@@ -1873,36 +1832,22 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		dataType: 'json',
 		success: function(responseData, textStatus, jqXHR) {
 			try {
-                // Validate that responseData is an object
-                if (responseData && typeof responseData === 'object') {
-
-                    // Validate and sanitize the response data
-                    o_ainvoke(responseData); // Assuming this function processes the data safely
-
-                    if (push) {
-                        var businessPath = responseData['businessPath'];
-                        var documentTitle = responseData['documentTitle'];
-                        var historyPointId = responseData['historyPointId'];
-
-                        // Validate and sanitize businessPath
-                        if (businessPath && isValidBusinessPath(businessPath)) {
-
-                            // Sanitize the documentTitle to prevent XSS
-                            documentTitle = sanitizeText(documentTitle);
-
-                            // Call pushState safely
-                            o_pushState(historyPointId, documentTitle, businessPath);
-                        }
-                    }
-
-                    // Call the post-invoke function, assuming it handles responseData securely
-                    o_postInvoke(responseData, newTargetWindow);
-                }
-            } catch (e) {
-                if (window.console) console.log(e);
-            } finally {
-                o_afterserver(responseData); // Assuming this function is safe
-            }
+				o_ainvoke(responseData);
+				if(push) {
+					var businessPath = responseData['businessPath'];
+					var documentTitle = responseData['documentTitle'];
+					var historyPointId = responseData['historyPointId'];
+					if(businessPath) {
+						o_pushState(historyPointId, documentTitle, businessPath);
+					}
+				}
+				
+				o_postInvoke(responseData, newTargetWindow);
+			} catch(e) {
+				if(window.console) console.log(e);
+			} finally {
+				o_afterserver(responseData);
+			}
 		},
 		error: o_onXHRError
 	})
@@ -2426,74 +2371,93 @@ function dismissInfoBox(uuid) {
 * and hides automatically
 */
 function showInfoBox(title, content) {
-    const sanitizedTitle = DOMPurify.sanitize(title);
-    const sanitizedContent = DOMPurify.sanitize(content);
-	// Factory method to create message box
-	var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
-	var info = '<div id="' + uuid
-	     + '" class="o_alert_info"><div class="alert alert-info clearfix o_sel_info_message"><a class="o_alert_close o_sel_info_close" href="javascript:;" onclick="dismissInfoBox(\'' + uuid + '\')"><i class="o_icon o_icon_close"> </i></a><h3><i class="o_icon o_icon_info"> </i> '
-		 + sanitizedTitle + '</h3><p>' + sanitizedContent + '</p></div></div>';
+    // Generate a unique identifier
+    var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
+
+    // Sanitize title and content
+    var sanitizedTitle = DOMPurify.sanitize(title);
+    var sanitizedContent = DOMPurify.sanitize(content);
+
+    // Create the info box HTML
+    var info = '<div id="' + uuid
+        + '" class="o_alert_info"><div class="alert alert-info clearfix o_sel_info_message">'
+        + '<a class="o_alert_close o_sel_info_close" href="javascript:;" onclick="dismissInfoBox(\'' + uuid + '\')">'
+        + '<i class="o_icon o_icon_close"> </i></a>'
+        + '<h3><i class="o_icon o_icon_info"> </i> '
+        + sanitizedTitle + '</h3><p>' + sanitizedContent + '</p></div></div>';
+
+    // Insert the info box into the DOM
     jQuery('#o_messages').prepend(info);
+
     // Hide message automatically based on content length
-    var time = (sanitizedContent.length > 150) ? 10000 : ((sanitizedContent.length > 70) ? 8000 : 6000);
+    var time = (content.length > 150) ? 10000 : ((content.length > 70) ? 8000 : 6000);
 
     // Callback to remove after reading
     var cleanup = function() {
-    	jQuery('#' + uuid)
-    		.transition({top : '-100%'}, 333, function() {
-    			jQuery('#' + uuid).remove();
-    		});    	
+        jQuery('#' + uuid)
+            .transition({top : '-100%'}, 333, function() {
+                jQuery('#' + uuid).remove();
+            });
     };
+
     // Show info box now
     jQuery('#' + uuid).show().transition({ top: 0 }, 333);
+
     // Visually remove message box immediately when user clicks on it
     jQuery('#' + uuid).click(function(e) {
-    	cleanup();
+        cleanup();
     });
-	o_scrollToElement('#o_top');
-    
+
+    o_scrollToElement('#o_top');
+
     setTimeout(function(){
-		try {
-			cleanup();
-		} catch(e) {
-			//possible if the user has closed the window
-		}
-	}, time);
+        try {
+            cleanup();
+        } catch(e) {
+            // Possible if the user has closed the window
+        }
+    }, time);
 }
+
 /*
 * renders an message box which the user has to click away
 * The last parameter buttonCallback is optional. if a callback js 
 * function is given it will be execute when the user clicks ok or closes the message box
 */
 function showMessageBox(type, title, message, buttonCallback) {
+    // Sanitize inputs by escaping HTML
     const sanitizedTitle = DOMPurify.sanitize(title);
     const sanitizedMessage = DOMPurify.sanitize(message);
 
-	if(type == 'info'){
-		showInfoBox(title, message);
-		return null;
-	} else {
-		var cssype = '';
-		if("warn" == type) {
-			cssype = 'alert-warning';
-		} else if("error" == type) {
-			cssype = 'alert-danger';
-		} else {
-			cssype = 'alert-info';
-		}
-		var content = '<div id="myFunctionalModal" class="modal o-modal-' + cssype + ' fade" tabindex="-1" role="dialog"><div class="modal-dialog"><div class="modal-content">';
-		content += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
+    if (type == 'info') {
+        showInfoBox(sanitizedTitle, sanitizedMessage);
+        return null;
+    } else {
+        let cssype = '';
+        if ("warn" == type) {
+            cssype = 'alert-warning';
+        } else if ("error" == type) {
+            cssype = 'alert-danger';
+        } else {
+            cssype = 'alert-info';
+        }
+
+        // Build sanitized content
+        let content = '<div id="myFunctionalModal" class="modal o-modal-' + cssype + ' fade" tabindex="-1" role="dialog">';
+        content += '<div class="modal-dialog"><div class="modal-content">';
+        content += '<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
         content += '<h4 class="modal-title">' + sanitizedTitle + '</h4></div>';
-		content += '<div class="modal-body alert ' + cssype + '"><p>' + sanitizedMessage + '</p></div></div></div></div>';
-		jQuery('#myFunctionalModal').remove();
-		jQuery('body').append(content);
-		               
-		var msg = jQuery('#myFunctionalModal').modal('show').on('hidden.bs.modal', function (e) {
-			jQuery('#myFunctionalModal').remove();
-		});
-		o_scrollToElement('#o_top');
-		return msg;
-	}
+        content += '<div class="modal-body alert ' + cssype + '"><p>' + sanitizedMessage + '</p></div></div></div></div>';
+
+        jQuery('#myFunctionalModal').remove();
+        jQuery('body').append(content);
+
+        var msg = jQuery('#myFunctionalModal').modal('show').on('hidden.bs.modal', function (e) {
+            jQuery('#myFunctionalModal').remove();
+        });
+        o_scrollToElement('#o_top');
+        return msg;
+    }
 }
 
 function o_extraTinyDirty(editor) {
@@ -2957,12 +2921,6 @@ var BDebugger = {
 			});
 		}
 	}
-}
-
-function sanitizeHTML(html) {
-    var div = document.createElement('div');
-    div.textContent = html; // Escapes HTML tags
-    return div.innerHTML; // Retrieves the escaped HTML
 }
 
 var OOEdusharing = {
