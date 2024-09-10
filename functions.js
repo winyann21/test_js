@@ -697,7 +697,7 @@ function o_ainvoke(r) {
 								
 								if(replaceElement || !withWrapper) {
 									// replace entire DOM element 
-									newc.replaceWith(hdrco);	
+									newc.sanitizeText(hdrco);
 								} else {
 									try{
 										newc.empty().html(hdrco);
