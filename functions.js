@@ -1721,19 +1721,29 @@ function o_XHRLoadend() {
 
 
 function o_onXHRSuccess (data, textStatus, jqXHR) {
-	try {	
-		o_ainvoke(data);
-		var businessPath = data['businessPath'];
-		var documentTitle = data['documentTitle'];
-		var historyPointId = data['historyPointId'];
-		if(businessPath) {
-			o_pushState(historyPointId, documentTitle, businessPath);
-		}
-	} catch(e) {
-		if(window.console) console.log(e);
-	} finally {
-		o_afterserver(data);
-	}
+	 try {
+        // Validate the data object and invoke safely
+        if (data && typeof data === 'object') {
+            o_ainvoke(data);  // Assuming this function handles data securely
+
+            // Validate and sanitize businessPath
+            var businessPath = data['businessPath'];
+            var documentTitle = data['documentTitle'];
+            var historyPointId = data['historyPointId'];
+
+            if (businessPath && isValidBusinessPath(businessPath)) {
+                // Sanitize documentTitle before passing it to o_pushState
+                documentTitle = sanitizeText(documentTitle);
+
+                // Use the sanitized/validated values safely
+                o_pushState(historyPointId, documentTitle, businessPath);
+            }
+        }
+    } catch (e) {
+        if (window.console) console.log(e);
+    } finally {
+        o_afterserver(data);  // Assuming this function processes data securely
+    }
 }
 
 function o_createIFrame(iframeName) {
@@ -1761,6 +1771,19 @@ function o_showFormDirtyDialog(onIgnoreCallback) {
 		onIgnoreCallback();
 	});
 	return false;
+}
+
+// Helper function to validate businessPath (allowing only alphanumeric, slashes, dashes, and underscores)
+function isValidBusinessPath(path) {
+    var pathPattern = /^[a-zA-Z0-9\-\/_]+$/;
+    return pathPattern.test(path);
+}
+
+// Helper function to sanitize document title and other text inputs
+function sanitizeText(input) {
+    var div = document.createElement('div');
+    div.innerText = input;  // This escapes potentially dangerous characters
+    return div.innerHTML;
 }
 
 function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirtyCheck, push, submit, busyCheck) {
@@ -1826,31 +1849,45 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 	
 	var targetUrl = jQuery('#' + formNam).attr("action");
 	jQuery.ajax(targetUrl,{
-		type:'POST',
-		data: data,
-		cache: false,
-		dataType: 'json',
-		success: function(responseData, textStatus, jqXHR) {
-			try {
-				o_ainvoke(responseData);
-				if(push) {
-					var businessPath = responseData['businessPath'];
-					var documentTitle = responseData['documentTitle'];
-					var historyPointId = responseData['historyPointId'];
-					if(businessPath) {
-						o_pushState(historyPointId, documentTitle, businessPath);
-					}
-				}
-				
-				o_postInvoke(responseData, newTargetWindow);
-			} catch(e) {
-				if(window.console) console.log(e);
-			} finally {
-				o_afterserver(responseData);
-			}
-		},
-		error: o_onXHRError
-	})
+        type:'POST',
+        data: data,
+        cache: false,
+        dataType: 'json',
+        success: function(responseData, textStatus, jqXHR) {
+            try {
+                // Validate that responseData is an object
+                if (responseData && typeof responseData === 'object') {
+
+                    // Validate and sanitize the response data
+                    o_ainvoke(responseData); // Assuming this function processes the data safely
+
+                    if (push) {
+                        var businessPath = responseData['businessPath'];
+                        var documentTitle = responseData['documentTitle'];
+                        var historyPointId = responseData['historyPointId'];
+
+                        // Validate and sanitize businessPath
+                        if (businessPath && isValidBusinessPath(businessPath)) {
+
+                            // Sanitize the documentTitle to prevent XSS
+                            documentTitle = sanitizeText(documentTitle);
+
+                            // Call pushState safely
+                            o_pushState(historyPointId, documentTitle, businessPath);
+                        }
+                    }
+
+                    // Call the post-invoke function, assuming it handles responseData securely
+                    o_postInvoke(responseData, newTargetWindow);
+                }
+            } catch (e) {
+                if (window.console) console.log(e);
+            } finally {
+                o_afterserver(responseData); // Assuming this function is safe
+            }
+        },
+        error: o_onXHRError
+    })
 }
 
 function o_ffXHRNFEvent(formNam, dispIdField, dispId, eventIdField, eventInt) {
@@ -2375,8 +2412,8 @@ function showInfoBox(title, content) {
     var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
 
     // Sanitize title and content
-    var sanitizedTitle = DOMPurify.sanitize(title);
-    var sanitizedContent = DOMPurify.sanitize(content);
+    var sanitizedTitle = o_escapeHtml(title);
+    var sanitizedContent = o_escapeHtml(content);
 
     // Create the info box HTML
     var info = '<div id="' + uuid
@@ -2426,8 +2463,8 @@ function showInfoBox(title, content) {
 */
 function showMessageBox(type, title, message, buttonCallback) {
     // Sanitize inputs by escaping HTML
-    const sanitizedTitle = DOMPurify.sanitize(title);
-    const sanitizedMessage = DOMPurify.sanitize(message);
+    const sanitizedTitle = o_escapeHtml(title);
+    const sanitizedMessage = o_escapeHtml(message);
 
     if (type == 'info') {
         showInfoBox(sanitizedTitle, sanitizedMessage);
