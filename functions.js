@@ -553,6 +553,26 @@ function o_postInvoke(r, newWindow) {
 	}
 }
 
+// Function to sanitize the filename by removing unsafe characters
+function sanitizeFilename(filename) {
+    return filename.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+}
+
+// Function to sanitize the URL to ensure it's valid and safe
+function sanitizeUrl(url) {
+    try {
+        const parsedUrl = new URL(url);
+        // Only allow http and https protocols
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+            throw new Error('Invalid URL protocol');
+        }
+        return encodeURI(parsedUrl.href); // Encode and return the sanitized URL
+    } catch (e) {
+        console.error('Invalid or unsafe URL:', e.message);
+        return null; // Return null if the URL is invalid
+    }
+}
+
 // main interpreter for ajax mode
 var o_debug_trid = 0;
 function o_ainvoke(r) {
@@ -750,7 +770,9 @@ function o_ainvoke(r) {
 						focusArray.push({ formName: cda.formName, formItemId: cda.formItemId });
 						break;
 					case 12:
-						o_downloadUrl(cda["filename"], cda["rurl"]);
+						const safeFileName = sanitizeFilename(cda["filename"]);
+						const safeRURL = sanitizeUrl(cda["rurl"]);
+						o_downloadUrl(safeFileName, safeRURL);
 						break;
 					default:
 						if (o_info.debug) o_log("?: unknown command "+co);
@@ -859,45 +881,21 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-
-	function sanitizeFilename(name) {
-			// Replace unsafe characters with an underscore
-			// This removes any character that is not a letter, number, dot, hyphen, or underscore
-			return name.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
-	}
-
-	const safeFilename = sanitizeFilename(filename);
-
-	let sanitizedUrl;
-	try {
-			const parsedUrl = new URL(url);
-
-			if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-					throw new Error('Invalid URL protocol. Only http and https are allowed.');
-			}
-
-			sanitizedUrl = encodeURI(parsedUrl.href);
-
-	} catch (e) {
-			console.error('Invalid or unsafe URL:', e.message);
-			return; 
-	}
-
+	// Create a link and set the URL using `createObjectURL`
 	var link = document.createElement("a");
-	link.style.display = "none"; 
-	link.href = sanitizedUrl;
-	link.download = safeFilename;    
-	
-	try {
-			document.body.appendChild(link); 
-			link.click(); 
+	link.style.display = "none";
+	link.href = new URL(url);
+	link.download = filename;
 
-			setTimeout(function () {
-					link.parentNode.removeChild(link); 
-			}, 1000);
-	} catch (appendError) {
-			console.error('Error appending link to the DOM:', appendError);
-	}
+	// It needs to be added to the DOM so it can be clicked
+	document.body.appendChild(link);
+	link.click();
+
+	// To make this work on Firefox we need to wait
+	// a little while before removing it.
+	setTimeout(function () {
+		link.parentNode.removeChild(link);
+	}, 1000);
 }
 
 
