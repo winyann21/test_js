@@ -861,41 +861,43 @@ function setFormDirty(formId) {
 function o_downloadUrl(filename, url) {
 	// Validate and sanitize the URL to avoid potential XSS
 	try {
-			// Ensure the URL is a valid and safe URL
+			// Parse the URL and ensure it's safe
 			const parsedUrl = new URL(url);
-
-			// Ensure only http(s) protocols are allowed
-			if (!parsedUrl.protocol.startsWith('http') && !parsedUrl.protocol.startsWith('https')) {
-					throw new Error('Invalid URL protocol');
+			
+			// Ensure the protocol is either HTTP or HTTPS
+			if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+					throw new Error('Invalid URL protocol. Only http and https are allowed.');
 			}
-
+			
+			// Optionally, you can add more domain validation here
+			// Example: restrict to certain trusted domains
+			// const allowedDomains = ['example.com'];
+			// if (!allowedDomains.includes(parsedUrl.hostname)) {
+			//     throw new Error('Invalid domain.');
+			// }
+			
 	} catch (e) {
-			console.error('Invalid URL:', e);
-			return;
+			console.error('Invalid URL:', e.message);
+			return; // Exit if the URL is invalid or unsafe
 	}
 
 	// Create a link element
 	var link = document.createElement("a");
-	link.style.display = "none"; // Hide the link
-	link.href = url;
-	link.download = filename;
+	link.style.display = "none"; // Hide the link element
+
+	// Set the sanitized and validated URL
+	link.href = encodeURI(url);  // Ensure the URL is safely encoded
+	link.download = filename;    // Set the file name for download
 
 	// Append the link to the DOM so it can be clicked
-	try {
-			document.body.appendChild(link);
-			link.click();
-	} catch (appendError) {
-			console.error('Error appending link to the DOM:', appendError);
-			return; 
-	}
+	document.body.appendChild(link);
 
-	// Clean up the DOM by removing the link after a delay
+	// Trigger the download
+	link.click();
+
+	// Remove the link after the download is triggered
 	setTimeout(function () {
-			try {
-					link.parentNode.removeChild(link); // Remove the link after clicking
-			} catch (removeError) {
-					console.error('Error removing link from the DOM:', removeError);
-			}
+			link.parentNode.removeChild(link);  // Cleanup the DOM
 	}, 1000);
 }
 
