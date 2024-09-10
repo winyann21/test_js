@@ -859,11 +859,25 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-    // Validation function for filenames
     function isValidFilename(name) {
-        // Basic validation for filenames, allowing alphanumeric, dots, and underscores
-        var filenamePattern = /^[a-zA-Z0-9._-]+$/;
+        // Basic validation for filenames, allowing alphanumeric, dots, underscores, and hyphens
+        const filenamePattern = /^[a-zA-Z0-9._-]+$/;
         return filenamePattern.test(name);
+    }
+
+    function sanitizeFilename(name) {
+        try {
+            // Validate the filename format
+            if (!isValidFilename(name)) {
+                throw new Error('Invalid filename. Only alphanumeric characters, dots, underscores, and hyphens are allowed.');
+            }
+
+            // Encode the filename to ensure proper formatting
+            return encodeURIComponent(name);
+        } catch (e) {
+            console.error('Invalid or unsafe filename:', e.message);
+            return null; // Return null if filename is invalid or unsafe
+        }
     }
 
     // Validation function for URLs
@@ -885,18 +899,17 @@ function o_downloadUrl(filename, url) {
         return; // Exit the function if the URL is invalid or unsafe
     }
 
-
-    // Validate filename
-    if (!isValidFilename(filename)) {
-        console.error('Invalid filename');
-        return;
+    // Sanitize and validate the filename
+    const sanitizedFilename = sanitizeFilename(filename);
+    if (!sanitizedFilename) {
+        return; // Exit the function if the filename is invalid or unsafe
     }
 
     // Create a link and set the URL using `createObjectURL`
     var link = document.createElement("a");
     link.style.display = "none";
     link.href = sanitizedUrl; // Safe because URL is validated
-    link.download = filename; // Safe because filename is validated
+    link.download = sanitizedFilename; // Safe because filename is validated
 
     // It needs to be added to the DOM so it can be clicked
     document.body.appendChild(link);
