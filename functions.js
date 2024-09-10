@@ -867,20 +867,24 @@ function o_downloadUrl(filename, url) {
     }
 
     // Validation function for URLs
-    function isValidUrl(url) {
-        try {
-            // Parse the URL
-            var parsedUrl = new URL(url);
-            
-            // Check the protocol
-            var allowedProtocols = ['http:', 'https:'];
-            return allowedProtocols.includes(parsedUrl.protocol) &&
-                   parsedUrl.hostname !== ''; // Ensure hostname is not empty
-        } catch (e) {
-            // URL parsing failed
-            return false;
+    let sanitizedUrl;
+    try {
+        // Parse the URL to ensure it's a valid URL
+        const parsedUrl = new URL(url);
+
+        // Step 2: Only allow http and https protocols to avoid malicious scripts
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+            throw new Error('Invalid URL protocol. Only http and https are allowed.');
         }
+
+        // Encode the URL to ensure proper formatting and avoid special character issues
+        sanitizedUrl = encodeURI(parsedUrl.href);
+
+    } catch (e) {
+        console.error('Invalid or unsafe URL:', e.message);
+        return; // Exit the function if the URL is invalid or unsafe
     }
+
 
     // Validate filename
     if (!isValidFilename(filename)) {
@@ -888,16 +892,10 @@ function o_downloadUrl(filename, url) {
         return;
     }
 
-    // Validate URL
-    if (!isValidUrl(url)) {
-        console.error('Invalid URL');
-        return;
-    }
-
     // Create a link and set the URL using `createObjectURL`
     var link = document.createElement("a");
     link.style.display = "none";
-    link.href = new URL(url); // Safe because URL is validated
+    link.href = sanitizedUrl; // Safe because URL is validated
     link.download = filename; // Safe because filename is validated
 
     // It needs to be added to the DOM so it can be clicked
