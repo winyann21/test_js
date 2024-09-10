@@ -859,21 +859,45 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-	// Create a link and set the URL using `createObjectURL`
+
+	function sanitizeFilename(name) {
+			// Replace unsafe characters with an underscore
+			// This removes any character that is not a letter, number, dot, hyphen, or underscore
+			return name.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+	}
+
+	const safeFilename = sanitizeFilename(filename);
+
+	let sanitizedUrl;
+	try {
+			const parsedUrl = new URL(url);
+
+			if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+					throw new Error('Invalid URL protocol. Only http and https are allowed.');
+			}
+
+			sanitizedUrl = encodeURI(parsedUrl.href);
+
+	} catch (e) {
+			console.error('Invalid or unsafe URL:', e.message);
+			return; 
+	}
+
 	var link = document.createElement("a");
-	link.style.display = "none";
-	link.href = new URL(url);
-	link.download = filename;
+	link.style.display = "none"; 
+	link.href = sanitizedUrl;
+	link.download = safeFilename;    
+	
+	try {
+			document.body.appendChild(link); 
+			link.click(); 
 
-	// It needs to be added to the DOM so it can be clicked
-	document.body.appendChild(link);
-	link.click();
-
-	// To make this work on Firefox we need to wait
-	// a little while before removing it.
-	setTimeout(function () {
-		link.parentNode.removeChild(link);
-	}, 1000);
+			setTimeout(function () {
+					link.parentNode.removeChild(link); 
+			}, 1000);
+	} catch (appendError) {
+			console.error('Error appending link to the DOM:', appendError);
+	}
 }
 
 
