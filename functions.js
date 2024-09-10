@@ -2402,8 +2402,8 @@ function dismissInfoBox(uuid) {
 
 function showInfoBox(title, content) {
 	// Sanitize title and content
-	const sanitizedTitle = o_escapeHtml(title);
-	const sanitizedContent = o_escapeHtml(content);
+	const sanitizedTitle = DOMPurify.sanitize(title);
+	const sanitizedContent = DOMPurify.sanitize(content);
 
 	// Factory method to create message box
 	var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
@@ -2458,8 +2458,8 @@ function showInfoBox(title, content) {
 */
 function showMessageBox(type, title, message, buttonCallback) {
 	// Sanitize inputs using DOMPurify
-	const sanitizedTitle = o_escapeHtml(title);
-	const sanitizedMessage = o_escapeHtml(message);
+	const sanitizedTitle = DOMPurify.sanitize(title);
+	const sanitizedMessage = DOMPurify.sanitize(message);
 
 	if (type == 'info') {
 			showInfoBox(sanitizedTitle, sanitizedMessage);
@@ -3028,7 +3028,7 @@ var OOEdusharing = {
 			dataType: 'html',
 			success: function(data) {
 					// Escape HTML content as a basic fallback
-					var escapedData = o_escapeHtml(data);
+					var escapedData = DOMPurify.sanitize(data);
 
 					// Process and insert escaped data into the DOM
 					var goToData = OOEdusharing.replaceGoTo(escapedData, identifier);
