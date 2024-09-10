@@ -128,10 +128,14 @@ var BLoader = {
 	// used to describe execution context verbally, this is only used to improve meaninfull logging
 	executeGlobalJS: function(jsString, contextDesc) {
     function sanitizeInput(input) {
-        // Basic sanitization to remove script tags and dangerous content
+        // More comprehensive sanitization example
+        // Remove potentially harmful constructs
         return input
             .replace(/<\/?script[^>]*>/gi, '') // Remove script tags
             .replace(/javascript:/gi, '') // Remove javascript: URL schemes
+            .replace(/eval\(/gi, '') // Remove eval
+            .replace(/new\s+Function\s*\(/gi, '') // Remove new Function
+            .replace(/window\.location\s*=/gi, '') // Remove assignments to window.location
             .trim();
     }
 
@@ -145,7 +149,7 @@ var BLoader = {
     try {
         const sanitizedCode = sanitizeInput(jsString);
 
-        // Use the Function constructor for safer code execution
+        // Use Function constructor with additional context if necessary
         const func = new Function(sanitizedCode);
         func(); // Execute the sanitized code
 
@@ -161,6 +165,7 @@ var BLoader = {
         }
     }
 	},
+
 
 	
 	// Load a CSS file from the given URL. The linkid represents the DOM id that is used to identify this CSS file
