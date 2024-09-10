@@ -2400,19 +2400,10 @@ function dismissInfoBox(uuid) {
 * and hides automatically
 */
 
-function escapeHTML(html) {
-    return html
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
 function showInfoBox(title, content) {
 	// Sanitize title and content
-	const sanitizedTitle = DOMPurify.sanitize(title);
-	const sanitizedContent = DOMPurify.sanitize(content);
+	const sanitizedTitle = o_escapeHtml(title);
+	const sanitizedContent = o_escapeHtml(content);
 
 	// Factory method to create message box
 	var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
@@ -2467,8 +2458,8 @@ function showInfoBox(title, content) {
 */
 function showMessageBox(type, title, message, buttonCallback) {
 	// Sanitize inputs using DOMPurify
-	const sanitizedTitle = DOMPurify.sanitize(title);
-	const sanitizedMessage = DOMPurify.sanitize(message);
+	const sanitizedTitle = o_escapeHtml(title);
+	const sanitizedMessage = o_escapeHtml(message);
 
 	if (type == 'info') {
 			showInfoBox(sanitizedTitle, sanitizedMessage);
