@@ -663,10 +663,10 @@ function o_ainvoke(r) {
 								
 								if(replaceElement || !withWrapper) {
 									// replace entire DOM element 
-									newc.replaceWith(hdrco);	
+									newc.textContent = hdrco;
 								} else {
 									try{
-										newc.empty().html(hdrco);
+										newc.empty().text(hdrco);
 										//check if the operation is a success especially for IE8
 										if(hdrco.length > 0 && newc.get(0).innerHTML == "") {
 											newc.get(0).innerHTML = hdrco;
