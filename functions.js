@@ -695,22 +695,26 @@ function o_ainvoke(r) {
 									newc.css('display','none'); //newc.style.display="none";
 								}
 								
-								if(replaceElement || !withWrapper) {
-									// replace entire DOM element 
-									newc.sanitizeText(hdrco);
-								} else {
-									try{
-										newc.empty().text(hdrco);
-										//check if the operation is a success especially for IE8
-										if(hdrco.length > 0 && newc.get(0).innerHTML == "") {
-											newc.get(0).innerText = hdrco;
-										}
-									} catch(e) {
-										if(window.console) console.log(e);
-										if(window.console) console.log('Fragment',hdrco);
-									}
-								}
-								newc = null;
+								if (replaceElement || !withWrapper) {
+                                    // Replace entire DOM element with sanitized HTML
+                                    var sanitizedContent = o_escapeHtml(hdrco); // You need to implement escapeHTML function
+                                    newc.innerHTML = sanitizedContent;
+                                } else {
+                                    try {
+                                        newc.empty();
+                                        var sanitizedContent = o_escapeHtml(hdrco); // Implement escapeHTML function
+                                        newc.html(sanitizedContent);
+
+                                        // Check for success, especially in older browsers
+                                        if (sanitizedContent.length > 0 && newc.get(0).innerHTML === "") {
+                                            newc.get(0).innerHTML = sanitizedContent;
+                                        }
+                                    } catch (e) {
+                                        if (window.console) console.log(e);
+                                        if (window.console) console.log('Fragment', hdrco);
+                                    }
+                                }
+                                newc = null;
 
 								checkDrakes();
 								
