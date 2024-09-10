@@ -2421,10 +2421,20 @@ function dismissInfoBox(uuid) {
 * renders an info msg that slides from top into the window
 * and hides automatically
 */
+
+function escapeHTML(html) {
+    return html
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function showInfoBox(title, content) {
 	// Sanitize title and content
-	const sanitizedTitle = o_escapeHtml(title);
-	const sanitizedContent = o_escapeHtml(content);
+	const sanitizedTitle = escapeHTML(title);
+	const sanitizedContent = escapeHTML(content);
 
 	// Factory method to create message box
 	var uuid = Math.floor(Math.random() * 0x10000 /* 65536 */).toString(16);
