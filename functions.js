@@ -863,35 +863,42 @@ function o_downloadUrl(filename, url) {
 	try {
 			// Ensure the URL is a valid and safe URL
 			const parsedUrl = new URL(url);
-			// Optionally, you can add more validation here
+
+			// Ensure only http(s) protocols are allowed
 			if (!parsedUrl.protocol.startsWith('http') && !parsedUrl.protocol.startsWith('https')) {
 					throw new Error('Invalid URL protocol');
 			}
+
 	} catch (e) {
 			console.error('Invalid URL:', e);
-			return; // Exit the function if the URL is invalid
+			return;
 	}
 
 	// Create a link element
 	var link = document.createElement("a");
-	link.style.display = "none";
-
-	// For downloading files from a URL directly, it's crucial to validate the URL
-	// If you're generating content dynamically, you might use Blob URLs instead
+	link.style.display = "none"; // Hide the link
 	link.href = url;
 	link.download = filename;
 
 	// Append the link to the DOM so it can be clicked
-	document.body.appendChild(link);
-
-	// Trigger the download
-	link.click();
+	try {
+			document.body.appendChild(link);
+			link.click();
+	} catch (appendError) {
+			console.error('Error appending link to the DOM:', appendError);
+			return; 
+	}
 
 	// Clean up the DOM by removing the link after a delay
 	setTimeout(function () {
-			link.parentNode.removeChild(link);
+			try {
+					link.parentNode.removeChild(link); // Remove the link after clicking
+			} catch (removeError) {
+					console.error('Error removing link from the DOM:', removeError);
+			}
 	}, 1000);
 }
+
 
 
 //Pop-up window for context-sensitive help
