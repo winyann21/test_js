@@ -714,10 +714,10 @@ function o_ainvoke(r) {
                                 continue;
                             }
 
-                            var sanitizedUrl = encodeURI(url);
+                            // var sanitizedUrl = encodeURI(url);
 
                             var pt = ce["pt"];
-                            BLoader.loadCSS(sanitizedUrl, id, pt);
+                            BLoader.loadCSS(url, id, pt);
 
                             if (o_info.debug) o_log("c7: add css: id:" + id + " ,url:'" + sanitizedUrl + "'");
                         }
