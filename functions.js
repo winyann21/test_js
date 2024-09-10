@@ -859,56 +859,22 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-	// Function to sanitize the filename by removing unsafe characters
-	function sanitizeFilename(name) {
-			// Replace unsafe characters with an empty string
-			return name.replace(/[^a-z0-9_\-\.]/gi, '_'); // Allow only alphanumeric, underscore, hyphen, and dot
-	}
-
-	// Step 1: Sanitize the filename
-	const safeFilename = sanitizeFilename(filename);
-
-	// Step 2: Validate and sanitize the URL to avoid potential XSS
-	let sanitizedUrl;
-	try {
-			// Parse the URL to ensure it's valid
-			const parsedUrl = new URL(url);
-
-			// Ensure only http and https protocols are allowed
-			if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-					throw new Error('Invalid URL protocol. Only http and https are allowed.');
-			}
-
-			// Encode the URL to avoid special character issues
-			sanitizedUrl = encodeURI(parsedUrl.href);
-
-	} catch (e) {
-			console.error('Invalid or unsafe URL:', e.message);
-			return; // Exit the function if the URL is invalid or unsafe
-	}
-
-	// Step 3: Create the link element
+	// Create a link and set the URL using `createObjectURL`
 	var link = document.createElement("a");
-	link.style.display = "none"; // Hide the link
+	link.style.display = "none";
+	link.href = new URL(url);
+	link.download = filename;
 
-	// Set the sanitized URL and the sanitized filename
-	link.href = sanitizedUrl;
-	link.download = safeFilename; // Use the sanitized filename
+	// It needs to be added to the DOM so it can be clicked
+	document.body.appendChild(link);
+	link.click();
 
-	// Step 4: Append the link to the DOM, trigger download, and clean up
-	try {
-			document.body.appendChild(link); // Append the link to the body
-			link.click(); // Trigger the download
-
-			// Remove the link after download
-			setTimeout(function () {
-					link.parentNode.removeChild(link); // Clean up
-			}, 1000);
-	} catch (appendError) {
-			console.error('Error appending link to the DOM:', appendError);
-	}
+	// To make this work on Firefox we need to wait
+	// a little while before removing it.
+	setTimeout(function () {
+		link.parentNode.removeChild(link);
+	}, 1000);
 }
-
 
 
 //Pop-up window for context-sensitive help
