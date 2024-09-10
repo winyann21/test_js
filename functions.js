@@ -2433,7 +2433,7 @@ function escapeHTML(html) {
 
 function showInfoBox(title, content) {
 	// Sanitize title and content
-	const sanitizedTitle = escapeHTML(title);
+	const sanitizedTitle = DOMPurify.sanitize(title);
 	const sanitizedContent = escapeHTML(content);
 
 	// Factory method to create message box
