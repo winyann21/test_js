@@ -869,9 +869,15 @@ function o_downloadUrl(filename, url) {
     // Validation function for URLs
     function isValidUrl(url) {
         try {
+            // Parse the URL
             var parsedUrl = new URL(url);
-            return ['http:', 'https:'].includes(parsedUrl.protocol); // Allow only HTTP and HTTPS
+            
+            // Check the protocol
+            var allowedProtocols = ['http:', 'https:'];
+            return allowedProtocols.includes(parsedUrl.protocol) &&
+                   parsedUrl.hostname !== ''; // Ensure hostname is not empty
         } catch (e) {
+            // URL parsing failed
             return false;
         }
     }
