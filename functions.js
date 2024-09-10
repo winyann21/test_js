@@ -140,12 +140,18 @@ var BLoader = {
 			// Parsing of JS script can fail in IE for unknown reasons (e.g. tinymce gets 8002010 error)
 			// Try to do a 'full page refresh' and load everything via page header, this normally works
 			// Safe URL handling
-			const url = new URL(window.location.href);
-			if (!url.searchParams.has('o_winrndo')) {
-					url.searchParams.append('o_winrndo', '1');
-					window.location.href = url.toString();
-			} else {
-					window.location.reload();
+			try {
+					// Handle URL safely
+					const url = new URL(window.location.href);
+					if (!url.searchParams.has('o_winrndo')) {
+							url.searchParams.append('o_winrndo', '1');
+							window.location.href = url.toString();
+					} else {
+							window.location.reload();
+					}
+			} catch (urlError) {
+					console.error('Error handling URL:', urlError);
+					// Handle URL error appropriately (e.g., fallback URL or user notification)
 			}
 		}		
 	},
