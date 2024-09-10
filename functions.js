@@ -2855,6 +2855,12 @@ var BDebugger = {
 	}
 }
 
+function sanitizeHTML(html) {
+    var div = document.createElement('div');
+    div.textContent = html; // Escapes HTML tags
+    return div.innerHTML; // Retrieves the escaped HTML
+}
+
 var OOEdusharing = {
 		
 	start: function() {
@@ -2923,17 +2929,28 @@ var OOEdusharing = {
 		
 		jQuery.ajax({
 			type: "GET",
-			url: url,
-			dataType : 'html',
-			success : function(data){
-				var goToData = OOEdusharing.replaceGoTo(data, identifier);
-				var esNode = container.append(goToData);
-				node.replaceWith(esNode);
-				OPOL.adjustContentHeightForAbsoluteElement('.o_edusharing_container .edusharing_metadata_wrapper');
-			},
-			error : function(XMLHttpRequest, textStatus, errorThrown) {
-				node.replaceWith("<div class='o_warning'>edu-sharing not available</div>");
-			}
+            url: url,
+            dataType: 'html',
+            success: function(data) {
+                // Sanitize HTML content to prevent XSS
+                var sanitizedData = sanitizeHTML(data);
+
+                // Process the sanitized data
+                var goToData = OOEdusharing.replaceGoTo(sanitizedData, identifier);
+
+                // Ensure container and node are valid jQuery objects
+                var esNode = container.append(goToData);
+
+                // Replace the old node with the new content
+                node.replaceWith(esNode);
+
+                // Adjust content height for absolute elements
+                OPOL.adjustContentHeightForAbsoluteElement('.o_edusharing_container .edusharing_metadata_wrapper');
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                // Handle error by replacing node with an error message
+                node.replaceWith("<div class='o_warning'>edu-sharing not available</div>");
+            }
 		})
 	},
 		
