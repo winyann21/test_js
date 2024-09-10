@@ -859,20 +859,37 @@ function setFormDirty(formId) {
 }
 
 function o_downloadUrl(filename, url) {
-	// Create a link and set the URL using `createObjectURL`
+	// Validate and sanitize the URL to avoid potential XSS
+	try {
+			// Ensure the URL is a valid and safe URL
+			const parsedUrl = new URL(url);
+			// Optionally, you can add more validation here
+			if (!parsedUrl.protocol.startsWith('http') && !parsedUrl.protocol.startsWith('https')) {
+					throw new Error('Invalid URL protocol');
+			}
+	} catch (e) {
+			console.error('Invalid URL:', e);
+			return; // Exit the function if the URL is invalid
+	}
+
+	// Create a link element
 	var link = document.createElement("a");
 	link.style.display = "none";
-	link.href = new URL(url);
+
+	// For downloading files from a URL directly, it's crucial to validate the URL
+	// If you're generating content dynamically, you might use Blob URLs instead
+	link.href = url;
 	link.download = filename;
 
-	// It needs to be added to the DOM so it can be clicked
+	// Append the link to the DOM so it can be clicked
 	document.body.appendChild(link);
+
+	// Trigger the download
 	link.click();
 
-	// To make this work on Firefox we need to wait
-	// a little while before removing it.
+	// Clean up the DOM by removing the link after a delay
 	setTimeout(function () {
-		link.parentNode.removeChild(link);
+			link.parentNode.removeChild(link);
 	}, 1000);
 }
 
