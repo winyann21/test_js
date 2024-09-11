@@ -695,29 +695,25 @@ function o_ainvoke(r) {
 									newc.css('display','none'); //newc.style.display="none";
 								}
 								
-								if (replaceElement || !withWrapper) {
-                                    // Replace entire DOM element with sanitized HTML
-                                    var sanitizedContent = sanitizeText(hdrco); // You need to implement escapeHTML function
-                                    newc.innerHTML = sanitizedContent;
-                                } else {
-                                    try {
-                                        newc.empty();
-                                        var sanitizedContent = sanitizeText(hdrco); // Implement escapeHTML function
-                                        newc.html(sanitizedContent);
-
-                                        // Check for success, especially in older browsers
-                                        if (sanitizedContent.length > 0 && newc.get(0).innerHTML === "") {
-                                            newc.get(0).innerHTML = sanitizedContent;
-                                        }
-                                    } catch (e) {
-                                        if (window.console) console.log(e);
-                                        if (window.console) console.log('Fragment', hdrco);
-                                    }
-                                }
-                                newc = null;
+								if(replaceElement || !withWrapper) {
+									// replace entire DOM element
+									newc.replaceWith(hdrco);
+								} else {
+									try{
+										newc.empty().html(hdrco);
+										//check if the operation is a success especially for IE8
+										if(hdrco.length > 0 && newc.get(0).innerHTML == "") {
+											newc.get(0).innerHTML = hdrco;
+										}
+									} catch(e) {
+										if(window.console) console.log(e);
+										if(window.console) console.log('Fragment',hdrco);
+									}
+								}
+								newc = null;
 
 								checkDrakes();
-								
+
 								if (jsol != "") {
 									BLoader.executeGlobalJS(jsol, 'o_ainvoker::jsol');
 								}
@@ -737,10 +733,10 @@ function o_ainvoke(r) {
 						wi.o_afterserver();
 						break;
 					case 7: // JSCSS: handle dynamic insertion of js libs and dynamic insertion/deletion of css stylesheets
-						// css remove, add, js add order should makes no big difference? except js calling/modifying css? 
+						// css remove, add, js add order should makes no big difference? except js calling/modifying css?
 						var loc = wi.document.location;
 						var furlp = loc.protocol+"//"+loc.hostname; // e.g. http://my.server.com:8000
-						if (loc.port != "" ) furlp += ":"+ loc.port; 
+						if (loc.port != "" ) furlp += ":"+ loc.port;
 						// 1. unload css file
 						var cssrm = cda["cssrm"];
 						for (var j = 0; j<cssrm.length; j++) {
@@ -760,7 +756,7 @@ function o_ainvoke(r) {
 							BLoader.loadCSS(url,id,pt);
 							if (o_info.debug) o_log("c7: add css: id:"+id+" ,url:'"+url+"'");
 						}
-						
+
 						// 3) js lib adds
 						var jsadd = cda["jsadd"];
 						for (var l=0; l<jsadd.length; l++) {
@@ -775,7 +771,7 @@ function o_ainvoke(r) {
 							var enc = ce["enc"];
 							if (jQuery.type(url) === "string") BLoader.loadJS(url, enc, true);
 							if (o_info.debug) o_log("c7: add js: "+url);
-						}	
+						}
 						break;
 					case 8: // new window / close window, executed in o_postInvoke
 						break;
@@ -791,13 +787,13 @@ function o_ainvoke(r) {
 						o_downloadUrl(cda["filename"], cda["rurl"]);
 						break;
 					default:
-						if (o_info.debug) o_log("?: unknown command "+co); 
+						if (o_info.debug) o_log("?: unknown command "+co);
 						break;
-				}		
+				}
 			} else {
 				if (o_info.debug) o_log("could not find window??");
 			}
-			
+
 			if(o_info.latexit) {
 				try {
 					if(typeof window.MathJax !== "undefined" && typeof window.MathJax.typeset !== "undefined") {
@@ -809,13 +805,13 @@ function o_ainvoke(r) {
 				} catch(e) {
 					if (window.console) console.log("error MathJax: ", e);
 				}
-			}	
+			}
 		}
 
 		// let everybody know dom replacement has finished
 		jQuery(document).trigger("oo.dom.replacement.after");
 	}
-	
+
 	// Scroll or focus, but not both to prevent jumping up and down
 	if(scrollTop && focusArray.length > 0) {
 		o_scrollTopAndFocus(focusArray);
@@ -824,7 +820,7 @@ function o_ainvoke(r) {
 	} else if(focusArray.length > 0) {
  		o_ffSetFocusArray(focusArray);
 	}
-/* minimalistic debugger / profiler	
+/* minimalistic debugger / profiler
 	BDebugger.logDOMCount();
 	BDebugger.logGlobalObjCount();
 	BDebugger.logGlobalOLATObjects();
@@ -837,7 +833,7 @@ function o_ainvoke(r) {
  */
 function clearAfterAjaxIframeCall() {
 	if (o_info.linkbusy) {
-		// A normal ajax call will clear the linkbusy, so something went wrong in 
+		// A normal ajax call will clear the linkbusy, so something went wrong in
 		// the ajax channel, e.g. error message from apache or no response from server
 		// Call afterserver to remove busy icon clear the linkbusy flag
 		o_afterserver();
@@ -845,7 +841,7 @@ function clearAfterAjaxIframeCall() {
 }
 
 function showAjaxBusy() {
-	// release o_info.linkbusy only after a successful server response 
+	// release o_info.linkbusy only after a successful server response
 	// - otherwhise the response gets overriden by next request
 	setTimeout(function(){
 		if (o_info.linkbusy) {
@@ -881,9 +877,9 @@ function removeAjaxBusy() {
 function setFormDirty(formId) {
 	// sets dirty form content flag to true and renders the submit button
 	// of the form with given dom id as dirty.
-	// (fg) 
+	// (fg)
 	o2c=1;
-	// fetch the form and the forms submit button is identified via the olat 
+	// fetch the form and the forms submit button is identified via the olat
 	// form submit name
 	var myForm = document.getElementById(formId);
 	if (myForm != null) {
@@ -936,7 +932,7 @@ function o_openPopUp(url, windowname, width, height, menubar) {
 	} catch(e) {
 		win = window.open(url, 'OpenOlat', attributes);
 	}
-	
+
 	win.focus();
 	if (o_info.linkbusy) {
 		o_afterserver();
@@ -987,21 +983,21 @@ function b_handleFileUploadFormChange(fileInputElement, fakeInputElement, saveBu
     }
 
 	// file upload forms are rendered transparent and have a fake input field that is rendered.
-	// on change events of the real input field this method is triggered to display the file 
+	// on change events of the real input field this method is triggered to display the file
 	// path in the fake input field. See the code for more info on this
 	var fileName = fileInputElement.value;
 	// remove unix path
 	var slashPos = fileName.lastIndexOf('/');
 	if (slashPos != -1) {
-		fileName=fileName.substring(slashPos + 1); 
+		fileName=fileName.substring(slashPos + 1);
 	}
 	// remove windows path
-	slashPos = fileName.lastIndexOf('\\');	
+	slashPos = fileName.lastIndexOf('\\');
 	if (slashPos != -1) {
-		fileName=fileName.substring(slashPos + 1); 
+		fileName=fileName.substring(slashPos + 1);
 	}
 	// add file name to fake input field
-	if (fakeInputElement) {		
+	if (fakeInputElement) {
 		fakeInputElement.value=fileName;
 	} else {
 		// in drop-down mode, add filename above input field
@@ -1018,11 +1014,11 @@ function b_handleFileUploadFormChange(fileInputElement, fakeInputElement, saveBu
 		var fileHtml = "<div class='o_filemeta'><i class='o_icon o_icon-fw o_filetype_file'> </i> " + escapedFileName + " <span class='text-muted o_filesize'>(" + fileSizeFormatted + ")</span></div>";
 		var existingFileEl = inputWrapperEl.parent().find('.o_file');
 		if (existingFileEl.length == 0) {
-			jQuery(fileHtml).insertBefore(inputWrapperEl);						
+			jQuery(fileHtml).insertBefore(inputWrapperEl);
 		} else {
-			jQuery(existingFileEl[0]).replaceWith(fileHtml);			
+			jQuery(existingFileEl[0]).replaceWith(fileHtml);
 		}
-		
+
 	}
 	// set focus to next element if available
 	var elements = fileInputElement.form.elements;
@@ -1071,7 +1067,7 @@ function formInputFileSize(fileInputElement) {
 	return -1;
 }
 
-// goto node must be in global scope to support content that has been opened in a new window 
+// goto node must be in global scope to support content that has been opened in a new window
 // with the clone controller - real implementation is moved to course run scope o_activateCourseNode()
 function gotonode(nodeid) {
 	try {
@@ -1082,7 +1078,7 @@ function gotonode(nodeid) {
 			o_activateInfoNode(nodeid);
 		} else if (opener && typeof opener.o_activateCourseNode != 'undefined') {
 			// must be content opened using the clone controller - search in opener window
-			opener.o_activateCourseNode(nodeid);		
+			opener.o_activateCourseNode(nodeid);
 		}
 	} catch (e) {
 		alert('Goto node error:' + e);
@@ -1115,26 +1111,26 @@ function o_viewportHeight() {
 
 
 /**
- *  calculate the height of the inner content area that can be used for 
- *  displaying content without using scrollbars. The height includes the 
+ *  calculate the height of the inner content area that can be used for
+ *  displaying content without using scrollbars. The height includes the
  *  margin, border and padding of the main columns
  *  @dependencies: prototype library, jQuery
  *  @author: Florian Gnaegi
  */
 OPOL.getMainColumnsMaxHeight =  function(){
 	var mainDomElement = jQuery('#o_main');
-	if (mainDomElement != 'undefined' && mainDomElement != null) { 
+	if (mainDomElement != 'undefined' && mainDomElement != null) {
 		var mainHeight = mainDomElement.height();
 		if (mainHeight > 0) {
 			return mainHeight;
-		} 
+		}
 	}
-	// fallback to viewport height	
+	// fallback to viewport height
 	return o_viewportHeight();
 };
 
 /**
- * Method to make the center content larger if it contains an element that does not have enough 
+ * Method to make the center content larger if it contains an element that does not have enough
  */
 OPOL.adjustContentHeightForAbsoluteElement = function(itemDomSelector) {
 	try {
@@ -1158,11 +1154,11 @@ OPOL.adjustContentHeightForAbsoluteElement = function(itemDomSelector) {
 		}
 		var mainHeight = mainDom.outerHeight(true);
 		var availableHeight = mainOffsetTop + mainHeight;
-		
-		// Calculate minimum required height based on the position of the previous DOM element 
+
+		// Calculate minimum required height based on the position of the previous DOM element
 		// (e.g. the pull-down button). Absolute positioned element have not offset
 		var prevDom = itemsDom.prev();
-		if (prevDom.length == 0) { 
+		if (prevDom.length == 0) {
 			// No previous element, don't know what to do
 			return;
 		}
@@ -1175,7 +1171,7 @@ OPOL.adjustContentHeightForAbsoluteElement = function(itemDomSelector) {
 		if (missingHeight > 0) {
 			var newHeight = (mainHeight + missingHeight) + 'px';
 			mainDom.css('min-height', newHeight);
-		}			
+		}
 	} catch (e) {
 		if(window.console)	console.log(e);
 	}
@@ -1184,9 +1180,9 @@ OPOL.adjustContentHeightForAbsoluteElement = function(itemDomSelector) {
 /* Set the container page width to full width of the window or use standard page width */
 OPOL.setContainerFullWidth = function(full) {
 	if (full) {
-		jQuery('body').addClass('o_width_full');				
+		jQuery('body').addClass('o_width_full');
 	} else {
-		jQuery('body').removeClass('o_width_full');		
+		jQuery('body').removeClass('o_width_full');
 	}
 	// Update navbar calculations of sites and tabs
 	jQuery.proxy(OPOL.navbar.onPageWidthChangeCallback,OPOL.navbar)();
@@ -1234,7 +1230,7 @@ function o_scrollTopAndFocus(focusArray) {
 
 function o_popover(id, contentId, loc) {
 	if(typeof(loc)==='undefined') loc = 'bottom';
-	
+
 	jQuery('#' + id).popover({
     	placement : loc,
     	html: true,
@@ -1255,7 +1251,7 @@ function o_popover(id, contentId, loc) {
 
 function o_popoverWithTitle(id, contentId, title, loc) {
 	if(typeof(loc)==='undefined') loc = 'bottom';
-	
+
 	var popover = jQuery('#' + id).popover({
     	placement : loc,
     	html: true,
@@ -1288,8 +1284,8 @@ function o_shareLinkPopup(id, text, loc) {
     	container: 'body',
     	content: text
 	}).on('shown.bs.popover', function () {
-		var clickListener = function (e) {	
-			if (jQuery(e.target).data('toggle') !== 'popover' && jQuery(e.target).parents('.popover.in').length === 0) { 
+		var clickListener = function (e) {
+			if (jQuery(e.target).data('toggle') !== 'popover' && jQuery(e.target).parents('.popover.in').length === 0) {
 				jQuery('#' + id).popover('hide');
 				jQuery('body').unbind('click', clickListener);
 			}
@@ -1302,7 +1298,7 @@ function o_shareLinkPopup(id, text, loc) {
 	elem.attr('title',elem.attr('data-original-title'));
 }
 
-function o_QRCodePopup(id, text, loc) {	
+function o_QRCodePopup(id, text, loc) {
 	if(typeof(loc)==='undefined') loc = 'top';
 	var elem = jQuery('#' + id);
 	elem.popover({
@@ -1363,7 +1359,7 @@ function b_resizeIframeToMainMaxHeight(iframeId) {
 		potentialHeight = potentialHeight - theIframe.offset().top;
 		// resize now
 		var height = (potentialHeight > colsHeight ? potentialHeight : colsHeight);
-		theIframe.height(height);			
+		theIframe.height(height);
 	}
 }
 // for gui debug mode
@@ -1389,14 +1385,14 @@ function o_dbg_mark(elid) {
 	var el = jQuery('#' + elid);
 	if (el) {
 		el.css('background-color','#FCFCB8');
-		el.css('border','3px solid #00F'); 
+		el.css('border','3px solid #00F');
 	}
 }
 
 function o_dbg_unmark(elid) {
 	var el = jQuery('#' + elid);
 	if (el) {
-		el.css('border',''); 
+		el.css('border','');
 		el.css('background-color','');
 	}
 }
@@ -1408,7 +1404,7 @@ function o_clearConsole() {
 
 var o_log_all = "";
 function o_log(str) {
-	if (str) {	
+	if (str) {
 		o_log_all = "\n"+o_debug_trid+"> "+str + o_log_all;
 		o_log_all = o_log_all.substr(0,4000);
 	}
@@ -1443,7 +1439,7 @@ function showerror(e) {
 
 // Each flexible.form item with an javascript 'on...' configured calls this fn.
 // It is called at least if a flexible.form is submitted.
-// It submits the component id as hidden parameters. This specifies which 
+// It submits the component id as hidden parameters. This specifies which
 // form item should be dispatched by the flexible.form container. A second
 // parameter submitted is the action value triggering the submit.
 // A 'submit' is not the same as 'submit and validate'. if the form should validate
@@ -1455,7 +1451,7 @@ function o_ffEvent(event, formNam, dispIdField, dispId, eventIdField, eventInt, 
 		event.stopPropagation();
 		return;
 	}
-	
+
 	//set hidden fields and submit form
 	var dispIdEl = document.getElementById(dispIdField);
 	var defDispId = dispIdEl.value;
@@ -1464,7 +1460,7 @@ function o_ffEvent(event, formNam, dispIdField, dispId, eventIdField, eventInt, 
 	var defEventId = eventIdEl.value;
 	eventIdEl.value = eventInt;
 	var tCmdEl = null;
-	
+
 	// manually execute onsubmit method - calling submit itself does not trigger onsubmit event!
 	var form = jQuery('#' + formNam);
 	var formValid = true;
@@ -1494,7 +1490,7 @@ function o_ffEvent(event, formNam, dispIdField, dispId, eventIdField, eventInt, 
 				name: 'cid',
 				value: tcid }).appendTo(form);
 		}
-		
+
 		var enctype = form.attr('enctype');
 		if(enctype && enctype.indexOf("multipart") == 0) {
 			form.submit(); // jQuery send onsubmit events
@@ -1538,11 +1534,6 @@ function o_deleteExtraMultipartFormData(name) {
 	}
 }
 
-// Function to sanitize text
-function sanitizeTextInput(text) {
-    return text ? text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') : '';
-}
-
 function o_XHRSubmit(formNam) {
 	if(o_info.submit == "submit" && jQuery('#' + formNam + " button.btn.o_new_window").length >= 1) {
 		if(typeof o_info.newWindow === "undefined" || o_info.newWindow == null) {
@@ -1550,7 +1541,7 @@ function o_XHRSubmit(formNam) {
 			o_info.newWindow.blur();
 		}
 	}
-	
+
 	o_info.submit=null;
 	o_info.preventOnchange=false;
 	var newWindow = o_info.newWindow;
@@ -1611,9 +1602,9 @@ function o_XHRSubmit(formNam) {
                     if (returnedData) {
                         // Example sanitization, adjust according to your needs
                         var sanitizedData = {
-                            businessPath: sanitizeText(returnedData.businessPath),
-                            documentTitle: sanitizeText(returnedData.documentTitle),
-                            historyPointId: sanitizeText(returnedData.historyPointId)
+                            businessPath: o_escapeHtml(returnedData.businessPath),
+                            documentTitle: o_escapeHtml(returnedData.documentTitle),
+                            historyPointId: o_escapeHtml(returnedData.historyPointId)
                         };
 
                         // Use sanitized data
@@ -1672,7 +1663,7 @@ function o_XHRSubmit(formNam) {
         }).catch(error => {
                    console.error('Error Post data:', error);
         });
-	
+
 
 		return false;
 	}
@@ -1710,7 +1701,7 @@ function processData(data, publicKey) {
 }
 
 function o_XHRLoadstart(evt) {
-	// Do only once: remove spinner and show upload progress 
+	// Do only once: remove spinner and show upload progress
 	jQuery('#o_ajax_progress').show();
 	jQuery('#o_ajax_busy .o_icon_busy').hide();
 	o_info.ajaxBusyLastProgress = Date.now();
@@ -1720,10 +1711,10 @@ function o_XHRProgress(evt) {
         var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
         // only upldate UI once in a while, painting is a lot slower than progress updates
         var now = Date.now();
-		if (now - o_info.ajaxBusyLastProgress > 100) {        			
+		if (now - o_info.ajaxBusyLastProgress > 100) {
 			o_info.ajaxBusyLastProgress = now;
-			jQuery('#o_ajax_busy .progress-bar').attr('aria-valuenow', percentComplete).css('width', percentComplete + '%');        		
-			jQuery('#o_ajax_progress .o_progress_info').text(BFormatter.formatBytes(evt.loaded) + '  /  ' + BFormatter.formatBytes(evt.total));        	
+			jQuery('#o_ajax_busy .progress-bar').attr('aria-valuenow', percentComplete).css('width', percentComplete + '%');
+			jQuery('#o_ajax_progress .o_progress_info').text(BFormatter.formatBytes(evt.loaded) + '  /  ' + BFormatter.formatBytes(evt.total));
 		}
 		if (percentComplete == 100) {
 			// Cleanup now, even when on server side something is still working
@@ -1733,9 +1724,9 @@ function o_XHRProgress(evt) {
 }
 function o_XHRLoadend() {
 	// Upload done, reset progress bar and activate spinner again to indicated server activity
-    jQuery('#o_ajax_busy .progress-bar').attr('aria-valuenow', 0).css('width', 0 + '%');        		
+    jQuery('#o_ajax_busy .progress-bar').attr('aria-valuenow', 0).css('width', 0 + '%');
 	jQuery('#o_ajax_progress').hide();
-	jQuery('#o_ajax_busy .o_icon_busy').show();   	
+	jQuery('#o_ajax_busy .o_icon_busy').show();
 	jQuery('#o_ajax_progress .o_progress_info').text('');
 	o_info.ajaxBusyLastProgress = null;
 }
@@ -1754,7 +1745,7 @@ function o_onXHRSuccess (data, textStatus, jqXHR) {
 
             if (businessPath && isValidBusinessPath(businessPath)) {
                 // Sanitize documentTitle before passing it to o_pushState
-                documentTitle = sanitizeText(documentTitle);
+                documentTitle = o_escapeHtml(documentTitle);
 
                 // Use the sanitized/validated values safely
                 o_pushState(historyPointId, documentTitle, businessPath);
@@ -1777,7 +1768,7 @@ function o_removeIframe(id) {
 }
 
 /**
- * Opens the form-dirty dialog. Use the callback to add code that should be executed in case the user 
+ * Opens the form-dirty dialog. Use the callback to add code that should be executed in case the user
  * presses the "ignore button" (Code that executes the original action the user initiated)
  */
 function o_showFormDirtyDialog(onIgnoreCallback) {
@@ -1813,7 +1804,7 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		// Note that the argument list is dynamic, there are potentially more arguments than
 		// listed in the function (e.g. in QTI2)
 		var callbackArguments = Array.prototype.slice.call(arguments);
-		callbackArguments[5] = false; 		
+		callbackArguments[5] = false;
 		var onIgnoreCallback = function() {
 			// fire original event when the "ok, delete anyway" button was pressed
 			o_ffXHREvent.apply(window, callbackArguments);
@@ -1821,14 +1812,14 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 		return o_showFormDirtyDialog(onIgnoreCallback);
 	} else if(busyCheck && !o2cl_noDirtyCheck()) {
 		// Start event execution, start server to prevent concurrent executions of other events.
-		// This check will call o_beforeserver(). 
+		// This check will call o_beforeserver().
 		// o_afterserver() called when AJAX call terminates
 		return false;
-	}	
+	}
 	// Don't call o_beforeserver() here because already called in o2cl_noDirtyCheck()
 	// The window.suppressOlatOnUnloadOnce works only once (needed in SCORM).
 	// o_beforeserver();
-	
+
 	var data = new Object();
 	if(submit) {
 		var form = jQuery('#' + formNam);
@@ -1843,7 +1834,7 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 	} else {
 		data['_csrf'] = jQuery('#' + formNam + " input[name='_csrf']").val();
 	}
-	
+
 	var openInNewWindow = false;
 	var openInNewWindowTarget = "_blank";
 	data['dispatchuri'] = dispId;
@@ -1861,13 +1852,13 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
 			}
 		}
 	}
-	
+
 	var newTargetWindow = null;
 	if(openInNewWindow) {
 		newTargetWindow = window.open("",openInNewWindowTarget);
 		newTargetWindow.blur();
 	}
-	
+
 	var targetUrl = jQuery('#' + formNam).attr("action");
 	jQuery.ajax(targetUrl,{
         type:'POST',
@@ -1891,7 +1882,7 @@ function o_ffXHREvent(formNam, dispIdField, dispId, eventIdField, eventInt, dirt
                         if (businessPath && isValidBusinessPath(businessPath)) {
 
                             // Sanitize the documentTitle to prevent XSS
-                            documentTitle = sanitizeText(documentTitle);
+                            documentTitle = o_escapeHtml(documentTitle);
 
                             // Call pushState safely
                             o_pushState(historyPointId, documentTitle, businessPath);
@@ -1915,12 +1906,12 @@ function o_ffXHRNFEvent(formNam, dispIdField, dispId, eventIdField, eventInt) {
 	var data = new Object();
 	data['dispatchuri'] = dispId;
 	data['dispatchevent'] = eventInt;
-	
+
 	var csrfEl = jQuery('#' + formNam + " input[name='_csrf']");
 	if(csrfEl != null && csrfEl.length > 0) {
 		data['_csrf'] = csrfEl.val();
 	}
-	
+
 	if(arguments.length > 5) {
 		var argLength = arguments.length;
 		for(var i=5; i<argLength; i=i+2) {
@@ -1929,7 +1920,7 @@ function o_ffXHRNFEvent(formNam, dispIdField, dispId, eventIdField, eventInt) {
 			}
 		}
 	}
-	
+
 	var targetUrl = jQuery('#' + formNam).attr("action");
 	jQuery.ajax(targetUrl,{
 		type:'POST',
@@ -1978,7 +1969,7 @@ function o_XHRScormEvent(targetUrl) {
 		},
 		error: o_onXHRError
 	})
-	
+
 	return false;
 }
 
@@ -1988,18 +1979,18 @@ function o_XHREvent(targetUrl, dirtyCheck, push) {
 		// Note that the argument list is dynamic, there are potentially more arguments than
 		// listed in the function
 		var callbackArguments = Array.prototype.slice.call(arguments);
-		callbackArguments[1] = false; 		
+		callbackArguments[1] = false;
 		var onIgnoreCallback = function() {
 			// fire original event when the "ok, delete anyway" button was pressed
 			o_XHREvent.apply(window, callbackArguments);
 		}
-		return o_showFormDirtyDialog(onIgnoreCallback);		
+		return o_showFormDirtyDialog(onIgnoreCallback);
 	} else {
 		// Start event execution, start server to prevent concurrent executions of other events.
-		// This check will call o_beforeserver(). 
+		// This check will call o_beforeserver().
 		// o_afterserver() called when AJAX call terminates
 		if(!o2cl_noDirtyCheck()) return false;
-	}	
+	}
 	// Don't call o_beforeserver() here because already called in o2cl_noDirtyCheck()
 	// The window.suppressOlatOnUnloadOnce works only once (needed in SCORM).
 	// o_beforeserver();
@@ -2020,7 +2011,7 @@ function o_XHREvent(targetUrl, dirtyCheck, push) {
 			}
 		}
 	}
-	
+
 	var targetWindow = null;
 	if(openInNewWindow) {
 		targetWindow = window.open("", openInNewWindowTarget);
@@ -2036,21 +2027,24 @@ function o_XHREvent(targetUrl, dirtyCheck, push) {
 		dataType: 'json',
 		success: function(responseData, textStatus, jqXHR) {
 			try {
-				if(push) {
-					try {
-						var businessPath = responseData['businessPath'];
-						var documentTitle = responseData['documentTitle'];
-						var historyPointId = responseData['historyPointId'];
-						if(businessPath) {
-							// catch separately - nothing must fail here!
-							o_pushState(historyPointId, documentTitle, businessPath);
-						}
-					} catch(e) {
-						if(window.console) console.log(e);
-					}
-				}
-				o_ainvoke(responseData);
-				o_postInvoke(responseData, targetWindow);
+				if (typeof responseData === 'object' && responseData !== null) {
+                    if(push) {
+                        try {
+                            var businessPath = o_escapeHtml(responseData['businessPath']);
+                            var documentTitle = o_escapeHtml(responseData['documentTitle']);
+                            var historyPointId = o_escapeHtml(responseData['historyPointId']);
+                            if(businessPath) {
+                                o_pushState(historyPointId, documentTitle, businessPath);
+                            }
+                        } catch(e) {
+                            if(window.console) console.log(e);
+                        }
+                    }
+                    o_ainvoke(responseData);
+                    o_postInvoke(responseData, targetWindow);
+                } else {
+                    throw new Error('Unexpected responseData format');
+                }
 			} catch(e) {
 				if(window.console) console.log(e);
 			} finally {
@@ -2075,7 +2069,7 @@ function o_XHRNFEvent(targetUrl) {
 			}
 		}
 	}
-	
+
 	jQuery.ajax(targetUrl,{
 		type:'POST',
 		data: data,
@@ -2104,7 +2098,7 @@ function o_pushState(historyPointId, title, url) {
 		var data = new Object();
 		data['businessPath'] = url;
 		data['historyPointId'] = historyPointId;
-		
+
 		var pUrl = url;// allow 2 domain like frentix.com and www.frentix.com
 		if(url != null && !(url.lastIndexOf("http", 0) === 0) && !(url.lastIndexOf("https", 0) === 0)) {
 			pUrl = window.location.protocol + "//" + window.location.host + url;
@@ -2112,7 +2106,7 @@ function o_pushState(historyPointId, title, url) {
 		}
 		o_info.businessPath = url;
 		if(!(typeof o_shareActiveSocialUrl === "undefined")) {
-			o_shareActiveSocialUrl();	
+			o_shareActiveSocialUrl();
 		}
 		if(window.history && !(typeof window.history === "undefined") && window.history.pushState) {
 			window.history.pushState(data, title, pUrl);
@@ -2137,7 +2131,7 @@ function o_toggleMark(el) {
  * Register a dragula object, the object will be associated
  * with a DOM element with the .o_drake class. If the class
  * is absent of the DOM, all drakes will be desstroyed.
- * 
+ *
  * @param drake
  * @returns drake
  */
@@ -2179,11 +2173,11 @@ function destroyRunningVideos(videos) {
 						this.player.remove();
 					} else {
 						if(window.console) console.log('Not found');
-					} 
+					}
 				} catch(e) {
 					if(window.console) console.log(e);
 				}
-				
+
 				// try to unload video element
 				try {
 					el.pause();
@@ -2294,7 +2288,7 @@ function addFormDirtyExclusion(elementId) {
             return;
         }
     }
-	
+
 	o2cExclusions.push(elementId);
 }
 
@@ -2308,7 +2302,7 @@ function o_submitByEnter(event) {
 
 function o_ffRegisterSubmit(formId, submElmId){
 	jQuery('#'+formId).data('FlexiSubmit', submElmId);
-}	
+}
 
 function o_ffSetFocusArray(focusArray) {
 	if(focusArray) {
@@ -2321,16 +2315,16 @@ function o_ffSetFocusArray(focusArray) {
 	}
 }
 
-// Set the focus in a flexi form to a specific form item, the first error 
-// in the form or the last element focused by a user action 
+// Set the focus in a flexi form to a specific form item, the first error
+// in the form or the last element focused by a user action
 function o_ffSetFocus(formId, formItemId) {
-	
+
 	var applyFocus = function(el) {
 		var tagName = el.tagName;
 		var focusApplied = false;
 		var buttonWithFocus = tagName == "BUTTON" && el.classList.contains('o_can_have_focus');
 		if(tagName == "INPUT" || tagName == "SELECT" || tagName == "TEXTAREA" || tagName == "OPTION" || buttonWithFocus) {
-			
+
 			if(el.classList.contains('o_date_day')) {
 				var jLastEl = jQuery(el);
 				jLastEl.datepicker('option', 'showOn', '');
@@ -2360,11 +2354,18 @@ function o_ffSetFocus(formId, formItemId) {
 		}
 		return focusApplied;
 	}
-	
-	var isInForm = function(formElementId, elementId) {
-		return jQuery("#" + elementId).parents("#" + formElementId).length > 0;
-	}
-	
+
+	function isValidId(id) {
+        return /^[a-zA-Z0-9_-]+$/.test(id); // Adjust the pattern as needed
+    }
+
+    var isInForm = function(formElementId, elementId) {
+        if (!isValidId(formElementId) || !isValidId(elementId)) {
+            throw new Error("Invalid ID format");
+        }
+        return jQuery("#" + elementId).parents("#" + formElementId).length > 0;
+    }
+
 	var isElementVisible = function(elementId) {
 		if(elementId == null || elementId === "") return false;
 		
